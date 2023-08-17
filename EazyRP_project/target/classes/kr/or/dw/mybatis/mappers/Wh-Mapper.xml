@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.WhDAO">
+	
+	<!-- 시퀀서 앞에 코드를 붙여준다 -->
+<!-- 	<selectKey keyProperty="est_no" order="BEFORE" resultType="java.lang.String"> -->
+<!-- 			SELECT ('EST_') || CASE  -->
+<!-- 				WHEN LENGTH(estimate_seq.nextval) = 1 -->
+<!-- 				THEN '00' || estimate_seq.nextval -->
+<!-- 				WHEN LENGTH(estimate_seq.nextval) = 2 -->
+<!-- 				THEN '0' || estimate_seq.nextval -->
+<!-- 				ELSE '' || estimate_seq.nextval -->
+<!-- 	   	    	END EST_NO -->
+<!-- 		   FROM dual -->
+<!-- 	</selectKey> -->
+	
+	<sql id="search">
+		<if test="cri.searchType == 'n'.toString()">
+			AND wh.wh_no LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'e'.toString()">
+			AND emp.e_name LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'ne'.toString()">
+			AND (
+			wh.wh_no LIKE '%' || #{cri.keyword} || '%'
+			OR
+			emp.e_name LIKE '%' || #{cri.keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<!-- 셀렉트할때는 리절트타입 필요하고 insert delete 등할때는 파라미터 타입이 들어감 -->
+	<select id="selectSearchWhList" resultType="wh">
+		SELECT wh.wh_no
+		,MAX(wh.SYS_REGDATE) sys_regdate
+	    ,MAX((SELECT wh_name FROM WAREHOUSE WHERE wh_no = wd.WH_NO2)) wh_name
+	    ,MAX((SELECT E_NAME  FROM EMP WHERE EMP_NO = wh.EMP_NO)) e_name
+	    ,MAX((SELECT pr_name FROM product WHERE pr_no = wd.PR_NO)) pr_name
+	    ,MAX((SELECT wo_name FROM workorder WHERE wo_no = wh.wo_no)) wo_name
+	    ,max(wh.PROGRESS) progress
+		FROM wh wh, WHDETAIL wd, emp emp
+		WHERE 1=1 
+		AND wh.enabled = 'y'
+		AND wh.emp_no = emp.emp_no
+		AND	wh.c_no = #{c_no}
+		<include refid="search"/>
+		GROUP BY wh.WH_NO
+		ORDER BY sys_regdate DESC
+	</select>
+	
+	<select id="selectSearchWhListCount" resultType="int">
+		SELECT	COUNT(DISTINCT wh.wh_no)
+		FROM	wh wh, emp emp, company com
+		WHERE	1=1
+		AND		wh.enabled = 'y'
+		AND		wh.emp_no = emp.emp_no
+		AND 	wh.c_no = com.c_no 
+		AND		wh.c_no = #{c_no}
+		<include refid="search"/>
+	</select>
+	
+	<insert id="insertWh" parameterType="wh">
+	
+		<selectKey keyProperty="wh_no" order="BEFORE" resultType="java.lang.String">
+			<include refid="makeWhNoSeq"></include>
+		</selectKey>
+		INSERT INTO wh	
+		(
+			wh_no,
+			sys_regdate,
+			emp_no,
+			enabled,
+			progress,
+			wo_no,
+			sys_up,
+			sys_updatedate,
+			sys_reg,
+			wh_total,
+			c_no
+		)
+		VALUES
+		(
+			#{wh_no},
+			sysdate,
+			#{emp_no},
+			'y',
+			#{progress},
+			#{wo_no},
+			#{emp_no},
+			sysdate,
+			#{emp_no},
+			#{wh_total},
+			#{c_no}
+		)
+	</insert>
+	
+	<sql id="makeWhNoSeq">
+	SELECT ('WH_') || CASE 
+						WHEN LENGTH(wh_no_seq.nextval) = 1
+						THEN '00' || wh_no_seq.nextval
+						WHEN LENGTH(wh_no_seq.nextval) = 2
+						THEN '0' || wh_no_seq.nextval
+						ELSE '' || wh_no_seq.nextval
+			   	      END WH_NO
+	  FROM dual
+</sql>
+	
+	<insert id="insertWhDetail" parameterType="wh">
+		INSERT INTO whdetail (
+			detail_no,
+			wh_no,
+			pr_no,
+			quantity,
+			outprice,
+			wh_no2,
+			fac_no,
+			total_outprice
+		)
+		VALUES(
+			detail_no_seq.nextval,
+			#{wh_no},
+			#{pr_no},
+			#{quantity},
+			#{outprice},
+			#{wh_no2},
+			#{fac_no},
+			#{total_outprice}
+		)
+	</insert>
+	
+	<select id="selectProductName" resultType="str">
+		SELECT 	pd.pr_name
+		FROM 	WHDETAIL wd, product pd
+		WHERE 	wd.pr_no = pd.pr_no
+		AND		wd.wh_no = #{getWh_no}
+	</select>
+	
+	<select id="selectWareHouseName" resultType="str">
+		SELECT 	wa.wh_name
+		FROM 	WHDETAIL wd, warehouse wa
+		WHERE 	wd.wh_no2 = wa.wh_no
+		AND		wd.wh_no = #{getWh_no}
+	</select>
+	
+	<select id="selectWh" resultType="Map">
+		SELECT 	wh.wh_no,
+				TO_CHAR(wh.sys_regdate, 'yyyy-MM-dd') sys_regdate,
+				wh.wo_no, wo.wo_name,	<!-- 작업지시서 번호, 제목 -->
+				wh.progress,
+				emp.e_name,
+				com.c_name,
+				wh.wh_total,
+				wh.emp_no
+		FROM wh wh, emp emp, workorder wo, company com
+		WHERE wh.emp_no = emp.emp_no
+		AND wh.wo_no = wo.wo_no
+		AND wh.c_no = com.c_no
+		AND wh.wh_no = #{wh_no}
+	</select>
+	
+	<select id="selectWhDetail" resultType="Map">
+		SELECT	ROWNUM,
+				whd.wh_no,
+				whd.detail_no,
+				whd.pr_no, p.pr_name,
+				whd.fac_no, f.fac_name,
+				whd.wh_no2, wa.wh_name,
+				whd.outprice,
+				whd.quantity,
+				whd.total_outprice
+		FROM whdetail whd, wh wh, factory f, product p, warehouse wa
+		WHERE whd.wh_no = wh.wh_no
+		AND whd.fac_no = f.fac_no
+		AND whd.pr_no = p.pr_no
+		AND whd.wh_no2 = wa.wh_no
+		AND whd.wh_no = #{wh_no}
+	</select>
+	
+	<update id="whUpdate">
+		UPDATE 	wh
+		SET		sys_up = #{emp_no},
+				emp_no = #{emp_no},
+				sys_updatedate = sysdate,
+				progress = #{progress},
+				wh_total = #{wh_total},
+				wo_no = #{wo_no},
+				c_no = #{c_no}
+		WHERE	wh_no = #{wh_no}
+	</update>
+	
+	<update id="modifyWhDetail">
+		MERGE
+		INTO 	whdetail
+		USING	dual
+		ON		(#{detail_no} != 0)
+		WHEN MATCHED THEN
+			UPDATE
+			SET		
+					wh_no		= #{wh_no},
+					pr_no		= #{pr_no},
+					quantity	= #{quantity},
+					outprice	= #{outprice},
+					wh_no2		= #{wh_no2},
+					fac_no		= #{fac_no},
+					total_outprice = #{total_outprice}
+			WHERE	detail_no	= #{detail_no}		
+		WHEN NOT MATCHED THEN 
+		INSERT (
+			detail_no,
+			wh_no,
+			pr_no,
+			quantity,
+			outprice,
+			wh_no2,
+			fac_no,
+			total_outprice
+		)
+		VALUES(
+			detail_no_seq.nextval,
+			#{wh_no},
+			#{pr_no},
+			#{quantity},
+			#{outprice},
+			#{wh_no2},
+			#{fac_no},
+			#{total_outprice}
+		)
+					
+	</update>
+	
+	<!-- detail.jsp 에서 제품 tr 삭제했을때 지워지는 쿼리이다. -->
+	<delete id="deleteWhDetail">
+		DELETE 	from whdetail
+		WHERE 	detail_no = #{detail_no}
+	</delete>
+	
+	<!-- 실제 삭제하는것이 아닌 enabled를 n으로 하여 조회할때 나오지 않도록 조건을 걸어준다. -->
+	<update id="deleteWh">
+		UPDATE 	wh
+		SET		enabled = 'n'
+		WHERE	wh_no = #{whNo}
+	</update>
+	
+	<!-- 위 deleteWorkOrder 와 함께 작업지시서 하나를 통째로 삭제할때 함께 삭제되는 그에 속한 디테일이다. -->
+	<delete id="deleteWhDetailList">
+		DELETE	from whdetail
+		WHERE	wh_no = #{whNo}
+	</delete>
+	
+	
+	
+</mapper>

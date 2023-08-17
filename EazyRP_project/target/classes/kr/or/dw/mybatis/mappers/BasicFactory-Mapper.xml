@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.BasicFactoryDAO">
+	
+	<!-- 셀렉트바 검색 -->
+	<sql id="search">
+		<if test="cri.searchType == 'n'.toString()">
+			AND fac_name LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'a'.toString()">
+			AND f.addr LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'p'.toString()">
+			AND pc_name LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'all'.toString()">
+			AND (
+			fac_name LIKE '%' || #{cri.keyword} || '%'
+			OR
+			f.addr LIKE '%' || #{cri.keyword} || '%'
+			OR
+			pc_name LIKE '%' || #{cri.keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<select id="selectFactoryList" resultType="Map">
+		SELECT f.*
+			  ,c.c_name
+			  ,p.pc_name
+		  FROM factory f, company c, process p
+		 WHERE f.c_no = c.c_no
+		   AND f.pc_code = p.pc_code
+		   AND f.enabled = 'Y'
+		   AND f.c_no = #{c_no}
+		   <include refid="search"/>
+		   ORDER BY fac_no
+	</select>
+
+	
+	<select id="selectFactoryListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM factory f, company c, process p
+		 WHERE f.c_no = c.c_no
+		   AND f.pc_code = p.pc_code
+		   AND f.enabled = 'Y'
+		   AND f.c_no = #{c_no}
+		   <include refid="search"/>
+	</select>
+	
+	<select id="selectFactoryDetail" resultType="Map">
+		SELECT f.*
+			  ,c.c_name
+			  ,p.pc_name
+		  FROM factory f, company c, process p
+		 WHERE f.c_no = c.c_no
+		   AND f.pc_code = p.pc_code
+		   AND fac_no = #{fac_no}
+	</select>
+	
+	<select id="selectFindSearchProcess" resultType="process">
+		SELECT *
+		  FROM process
+		 WHERE enabled = 'y'
+		 <if test="searchType == 'n'.toString()">
+			AND pc_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND pc_content LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (pc_name LIKE '%' || #{keyword} || '%'
+			OR pc_content LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY pc_name
+	</select>
+	
+	<select id="selectFindProcessList" resultType="process">
+		SELECT *
+		  FROM process
+		 WHERE enabled = 'y'
+		 ORDER BY pc_name
+	</select>
+	
+	<update id="updateFactory">
+		UPDATE factory SET fac_name = #{fac_name}
+						  ,c_no = #{c_no}
+						  ,pc_code = #{pc_code}
+						  ,addr = #{addr}
+		 WHERE fac_no = #{fac_no} 
+	</update>
+	
+	<insert id="insertFactory">
+		<selectKey keyProperty="fac_no" order="BEFORE" resultType="java.lang.String">
+				SELECT ('FAC_') || CASE 
+					WHEN LENGTH(factory_seq.nextval) = 1
+					THEN '00' || factory_seq.nextval
+					WHEN LENGTH(factory_seq.nextval) = 2
+					THEN '0' || factory_seq.nextval
+					ELSE '' || factory_seq.nextval
+		   	    	END FAC_NO
+			   FROM dual
+		</selectKey>
+		INSERT INTO factory (
+							   fac_no
+							  ,fac_name
+							  ,c_no
+							  ,pc_code
+							  ,addr
+							  ,enabled
+							   )
+						VALUES(
+							   #{fac_no}
+							  ,#{fac_name}
+							  ,#{c_no}
+							  ,#{pc_code}
+							  ,#{addr}
+							  ,'Y'
+			   				   )
+	</insert>
+	
+	<update id="deleteFactory">
+		UPDATE factory SET enabled = 'N'
+		 WHERE fac_no = #{fac_no} 
+	</update>
+	
+</mapper>

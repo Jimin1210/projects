@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.ItemDAO">
+	
+	<!-- 셀렉트바 검색 -->
+	<sql id="search">
+		<if test="cri.searchType == 'p'.toString()">
+			AND pr_name LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'g'.toString()">
+			AND pr_gr LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 's'.toString()">
+			AND pr_st LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'c'.toString()">
+			AND pr_class LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'all'.toString()">
+			AND (
+			pr_name LIKE '%' || #{cri.keyword} || '%'
+			OR
+			pr_gr LIKE '%' || #{cri.keyword} || '%'
+			OR
+			pr_st LIKE '%' || #{cri.keyword} || '%'
+			OR
+			pr_class LIKE '%' || #{cri.keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<select id="selectItemList" resultType="product">
+		SELECT pr_no
+			  ,pr_name
+			  ,c.c_name c_no
+			  ,pr_gr
+			  ,pr_st
+			  ,pr_inprice
+			  ,pr_exprice
+			  ,pr_class
+			  ,p.exdate
+			  ,p.img
+			  ,s.sp_name sp_no
+			  ,p.quantity
+			  ,w.wh_name wh_no
+		  FROM product p, company c, warehouse w, sprice s
+		 WHERE p.c_no = c.c_no
+		   AND p.wh_no = w.wh_no
+		   AND p.sp_no = s.sp_no
+		   AND p.enabled = 'Y'
+		   AND p.c_no = #{c_no, jdbcType = VARCHAR}
+		   <include refid="search"/>
+		   ORDER BY pr_no
+	</select>
+
+	
+	<select id="selectItemListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM product
+		 WHERE enabled = 'Y'
+		   AND c_no = #{c_no, jdbcType = VARCHAR}
+		   <include refid="search"/>
+	</select>
+	
+	
+	<select id="selectFindSearchWarehouseList" resultType="Map">
+		SELECT wh_no
+			  ,wh_name
+			  ,wh_gb
+			  ,w.addr
+			  ,c.c_name
+			  ,w.c_no
+		  FROM warehouse w, company c
+		 WHERE w.c_no = c.c_no
+		   AND w.enabled = 'Y'
+		 <if test="searchType == 'w'.toString()">
+			AND wh_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'a'.toString()">
+			AND w.addr LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'g'.toString()">
+			AND wh_gb LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (wh_name LIKE '%' || #{keyword} || '%'
+			OR w.addr LIKE '%' || #{keyword} || '%'
+			OR wh_gb LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY wh_name
+	</select>
+	
+	<select id="selectFindWarehouseList" resultType="Map">
+		SELECT wh_no
+			  ,wh_name
+			  ,wh_gb
+			  ,w.addr
+			  ,c.c_name
+			  ,w.c_no
+		  FROM warehouse w, company c
+		 WHERE w.c_no = c.c_no
+		   AND w.enabled = 'Y'
+		 ORDER BY wh_name
+	</select>
+	
+	<select id="selectFindSearchSpriceList" resultType="Map">
+		SELECT *
+		  FROM sprice
+		 WHERE enabled = 'Y'
+		 <if test="searchType == 'n'.toString()">
+			AND sp_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'i'.toString()">
+			AND sp_in LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'e'.toString()">
+			AND sp_ex LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (sp_name LIKE '%' || #{keyword} || '%'
+			OR sp_in LIKE '%' || #{keyword} || '%'
+			OR sp_ex LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY sp_no
+	</select>
+	
+	<select id="selectFindSpriceList" resultType="Map">
+		SELECT *
+		  FROM sprice
+		 WHERE enabled = 'Y'
+		 ORDER BY sp_no
+	</select>
+	
+	<insert id="insertItem">
+		<selectKey keyProperty="pr_no" order="BEFORE" resultType="java.lang.String">
+				SELECT ('PR_') || CASE 
+					WHEN LENGTH(product_seq.nextval) = 1
+					THEN '00' || product_seq.nextval
+					WHEN LENGTH(product_seq.nextval) = 2
+					THEN '0' || product_seq.nextval
+					ELSE '' || product_seq.nextval
+		   	    	END PR_NO
+			   FROM dual
+		</selectKey>
+		INSERT INTO product (
+							   pr_no
+							  ,pr_name
+							  ,c_no
+							  ,pr_gr
+							  ,pr_st
+							  ,pr_inprice
+							  ,pr_exprice
+							  ,pr_class
+							  ,img
+							  ,exdate
+							  ,sp_no
+							  ,sys_up
+							  ,sys_regdate
+							  ,sys_updatedate
+							  ,sys_reg
+							  ,quantity
+							  ,wh_no
+							  ,enabled
+							   )
+						VALUES(
+							   #{pr_no}
+							  ,#{pr_name}
+							  ,#{c_no}
+							  ,#{pr_gr}
+							  ,#{pr_st}
+							  ,#{pr_inprice}
+							  ,#{pr_exprice}
+							  ,#{pr_class}
+							  ,#{img}
+							  ,#{exdate, jdbcType = DATE}
+							  ,#{sp_no}
+							  ,#{sys_up}
+							  ,sysdate
+							  ,sysdate
+							  ,#{sys_reg}
+							  ,#{quantity}
+							  ,#{wh_no}
+							  ,'Y'
+			   				   )
+	</insert>
+	
+	<select id="selectProductDetail" resultType="Map">
+		SELECT p.pr_no
+			  ,pr_name
+			  ,p.c_no
+			  ,c_name
+			  ,pr_gr
+			  ,pr_st
+			  ,pr_inprice
+			  ,pr_exprice
+			  ,pr_class
+			  ,p.exdate
+			  ,p.img
+			  ,p.sp_no
+			  ,s.sp_name
+			  ,p.quantity
+			  ,p.wh_no
+			  ,w.wh_name
+		  FROM product p, company c, warehouse w, sprice s
+		 WHERE p.c_no = c.c_no
+		   AND p.wh_no = w.wh_no
+		   AND p.sp_no = s.sp_no
+		   AND p.pr_no = #{pr_no}
+	</select>
+	
+	<update id="updateProduct">
+		UPDATE product SET pr_name = #{pr_name}
+						  ,c_no = #{c_no}
+						  ,pr_gr = #{pr_gr}
+						  ,pr_st = #{pr_st}
+						  ,pr_inprice = #{pr_exprice}
+						  ,pr_class = #{pr_class}
+						  ,img = #{img}
+						  ,exdate = #{exdate, jdbcType = DATE}
+						  ,sp_no = #{sp_no}
+						  ,sys_up = #{sys_up}
+						  ,sys_updatedate = sysdate
+						  ,quantity = #{quantity}
+						  ,wh_no = #{wh_no}
+		 WHERE pr_no = #{pr_no} 
+	</update>
+	
+	<update id="deleteProduct">
+		UPDATE product SET enabled = 'N'
+						  ,img = null
+						  ,sys_updatedate = sysdate
+						  ,sys_up = #{sys_up}
+		 WHERE pr_no = #{pr_no} 
+	</update>
+	
+</mapper>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.ContactDAO">
+	
+	<!-- 셀렉트바 검색 -->
+	<sql id="search">
+		<if test="searchType == 'c'.toString()">
+			AND c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'r'.toString()">
+			AND c_rname LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND keyword LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			c_name LIKE '%' || #{keyword} || '%'
+			OR
+			c_rname LIKE '%' || #{keyword} || '%'
+			OR
+			keyword LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+
+	<!-- contact -->
+
+	<select id="selectContactList" resultType="company">
+		SELECT c.c_no
+			  ,c_name
+			  ,c_rname
+			  ,c_tel
+			  ,c_phone
+			  ,keyword
+			  ,c.enabled
+			  ,(bank || ' ' || ac_no) account
+			  ,addr
+			  ,sp_no
+		  FROM company c, account a
+		 WHERE 1=1
+		   AND c.account = a.ac_cd
+		   AND contact_gb = 1
+		   <include refid="search"/> 
+	</select>
+	
+	<select id="selectContactListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM company
+		 WHERE 1=1
+		   AND contact_gb = 1
+		   <include refid="search"/>
+	</select>
+	
+	<select id="getSearchContactList" resultType="company">
+		SELECT *
+		  FROM company
+		 WHERE contact_gb != 1
+		<if test="searchType == 'w'.toString()">
+			AND c_rname LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'a'.toString()">
+			AND addr LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND keyword LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cwap'.toString()">
+			AND (c_rname LIKE '%' || #{keyword} || '%'
+			OR c_name LIKE '%' || #{keyword} || '%'
+			OR keyword LIKE '%' || #{keyword} || '%'
+			OR addr LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY c_name
+	</select>
+	
+	<select id="getContactList" resultType="company">
+		SELECT *
+		  FROM company
+		 WHERE contact_gb != 1
+		 ORDER BY c_name
+	</select>
+	
+	<update id="updateContactGb">
+		UPDATE company SET contact_gb = 1
+		 WHERE c_no = #{c_no} 
+	</update>
+	
+	<select id="selectContactDetail" resultType="Map">
+		SELECT c.c_no
+			  ,c_name
+			  ,c_rname
+			  ,c_tel
+			  ,c_phone
+			  ,keyword
+			  ,c.enabled
+			  ,c.account
+			  ,addr
+			  ,sp_no
+			  ,(bank || ' ' || ac_no) acc
+		  FROM company c, account a
+		 WHERE 1=1
+		   AND c.account = a.ac_cd
+		   AND contact_gb = 1
+		   AND c.c_no = #{c_no}
+	</select>
+	
+	<update id="modifyContact">
+		UPDATE company SET c_name = #{c_name}
+						  ,c_rname = #{c_rname}
+						  ,c_tel = #{c_tel}
+						  ,c_phone = #{c_phone}
+						  ,keyword = #{keyword}
+						  ,account = #{account}
+						  ,addr = #{addr}
+						  ,sys_up = #{sys_up}
+						  ,sys_updatedate = sysdate
+						  ,sys_regdate = sysdate
+						  ,sys_reg = #{sys_reg}
+		 WHERE c_no = #{c_no} 
+	</update>
+	
+	<update id="updateAccount">
+		UPDATE account SET bank = #{bank}
+						  ,ac_no = #{ac_no}
+		 WHERE ac_cd = #{ac_cd} 
+	</update>
+	
+	<update id="deleteContact">
+		UPDATE company SET contact_gb = 0
+		 WHERE c_no = #{c_no} 
+	</update>
+	
+</mapper>

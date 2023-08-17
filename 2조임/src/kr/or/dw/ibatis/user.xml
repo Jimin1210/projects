@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+	PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+	"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="user">
+
+	<select id="getUserNick" parameterClass="String" resultClass="String">
+		SELECT nick FROM a_user WHERE nick = #nick#
+	</select>
+	
+	<select id="getAllProducts" resultClass="productVo">
+		SELECT num, name, cla, cost, p_description, img, gb_view
+		  FROM a_product
+		 WHERE GB_VIEW = 'Y'
+	</select>
+	
+	<select id="getProducts" parameterClass="int" resultClass="productVo">
+		SELECT num, name, cla, cost, p_description, img, gb_view
+		  FROM a_product
+		 WHERE cla = #cla# 
+		   AND GB_VIEW = 'Y'
+	</select>
+	
+	<select id="getUserNumber" parameterClass="String" resultClass="int">
+		SELECT u_no FROM a_user WHERE nick = #nick#
+	</select>
+	
+	<select id = "getUserId" parameterClass="String" resultClass="String">
+		SELECT id FROM a_user WHERE id = #id#
+	</select>
+	
+	<insert id="insertUser" parameterClass="userVO">
+	
+		<selectKey keyProperty="u_no" resultClass="int">
+			SELECT a_user_seq.nextval u_no FROM dual
+		</selectKey>
+	
+		INSERT INTO a_user 
+					VALUES (
+							 #u_no#
+							,#id#
+							,#pwd#
+							,#name#
+							,#nick#
+							,0
+							,'고객'
+							,sysdate
+							,0
+							,0
+							,#birth#
+							,#tel#
+							,#addr#
+							,#email#
+							,#gender#
+							,0
+							,'N'
+							,1
+							)
+	</insert>
+	
+	<select id="loginUser" parameterClass="String" resultClass="userVo">
+		SELECT id, pwd, nick, picture, pos, u_no
+ 		FROM a_user 
+ 		WHERE id = #id#
+ 		  AND gb_out != 'Y'
+	</select>
+	
+	<update id="updateUserPicPath" parameterClass="userVo">
+		UPDATE a_user SET picture = #picture# WHERE u_no = #u_no#
+	</update>
+
+	<select id="idListGet" resultClass="String">
+		SELECT id FROM a_user WHERE gb_out != 'Y'
+	</select>
+	
+	<update id="updateStatus" parameterClass="map">
+		UPDATE a_user SET picture = #picture#, nick = #nick# WHERE u_no = #u_no#
+	</update>
+	
+	<update id="deleteUser" parameterClass="int">
+		UPDATE a_user SET gb_out = 'Y' WHERE u_no = #u_no#
+	</update>
+	
+</sqlMap>

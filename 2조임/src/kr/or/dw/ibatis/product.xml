@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+	PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+	"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="product">
+	<select id="getAllProducts" resultClass="productVo">
+		SELECT num, name, cla, cost, p_description, gb_view, img
+		  FROM a_product
+	</select>
+	
+	<select id="getAllProducts2" resultClass="productVo">
+		SELECT num, name, cla, cost, p_description, gb_view, img
+		  FROM a_product
+		 WHERE gb_view = 'Y'
+	</select>
+	
+	<select id="getProducts" parameterClass="int" resultClass="productVo">
+		SELECT num, name, cla, cost, p_description, gb_view, img
+		  FROM a_product
+		 WHERE cla = #cla#
+	</select>
+</sqlMap>

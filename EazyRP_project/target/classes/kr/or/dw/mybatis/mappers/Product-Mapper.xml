@@ -1,0 +1,409 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.ProductDAO">
+	
+	<sql id="search">
+		<if test="searchType == 'number'.toString()">
+			AND pr_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'code'.toString()">
+			AND pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'title'.toString()">
+			AND pr_gr LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'nnc'.toString()">
+			AND (
+			pr_no LIKE '%' || #{keyword} || '%'
+			OR
+			pr_name LIKE '%' || #{keyword} || '%'
+			OR
+			pr_gr LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<!-- 셀렉트할때는 리절트타입 필요하고 insert delete 등할때는 파라미터 타입이 들어감 -->
+	<select id="selectSearchProductList" resultType="product">
+		SELECT *
+		  FROM product
+		 WHERE 1=1
+		 <include refid="search"/>
+		 order BY pr_no desc
+	</select>
+	
+	<select id="selectSearchProductListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM product
+		 WHERE 1=1
+		 <include refid="search"/>
+	</select>
+	
+	<select id="getB_sheet" resultType="bsheet">
+		SELECT b.*, e.e_name e_name
+		 FROM B_SHEET b, emp e
+		WHERE b.emp_no = e.emp_no
+		  AND b.buy_c_no = #{c_no}
+	  	<if test="searchType == 't'.toString()">
+			AND e.e_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND b.process LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND b.pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND b.con_c_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'tcw'.toString()">
+			AND (e.e_name LIKE '%' || #{keyword} || '%'
+			OR b.process LIKE '%' || #{keyword} || '%'
+			OR b.pr_name LIKE '%' || #{keyword} || '%'
+			OR b.con_c_no LIKE '%' || #{keyword} || '%')
+		</if>
+		order BY b.sheet_no desc
+	</select>
+	
+	<select id="selectSearchNoteListCount" resultType="int">
+		SELECT COUNT(*) 
+			 FROM B_SHEET b, emp e, company c
+			WHERE b.emp_no = e.emp_no
+			  AND b.con_c_no = c.c_no
+			  AND b.buy_c_no = #{c_no}
+		  	<if test="searchType == 't'.toString()">
+				AND e.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND b.process LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'p'.toString()">
+				AND b.pr_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'c'.toString()">
+				AND b.con_c_no LIKE '%' || #{keyword} || '%'
+				
+			</if>
+			<if test="searchType == 'tcw'.toString()">
+				AND (e.e_name LIKE '%' || #{keyword} || '%'
+				OR b.process LIKE '%' || #{keyword} || '%'
+				OR b.pr_name LIKE '%' || #{keyword} || '%'
+				OR b.con_c_no LIKE '%' || #{keyword} || '%')
+			</if>
+			order BY b.sheet_no desc
+	</select>
+	
+	<select id="getBuyDetail" resultType="buyDetail">
+		SELECT *
+		  FROM buy_detail
+		 WHERE sheet_no = #{sheet_no}
+	</select>
+	
+	<select id="getSheet" resultType="bsheet">
+		SELECT b.*, e.e_name e_name
+		 FROM B_SHEET b, emp e
+		WHERE b.emp_no = e.emp_no
+		  AND sheet_no = #{sheet_no}
+	</select>
+	
+	<select id="getCompanyList" resultType="company">
+		SELECT * FROM company WHERE 1 = 1
+		AND c_name LIKE '%' || #{keyword} || '%'
+	</select>
+	
+	<insert id="insertProductBuy">
+		INSERT INTO b_sheet VALUES(
+			sheet_no_seq.nextval,
+			sysdate,
+			#{emp_no},
+			#{fc_no},
+			#{price},
+			'진행대기',
+			'',
+			'',
+			'',
+			'',
+			'',
+			'',
+			'',
+			#{buy_c_no},
+			#{con_c_no},
+			#{pr_name}
+		)
+	</insert>
+	<select id="insertSheetNo" resultType="int">
+		SELECT sheet_no_seq.CURRVAL sheet_no FROM dual
+	</select>
+	
+	<insert id="insertProductDetail">
+		INSERT INTO BUY_DETAIL VALUES(
+			b_no_seq.nextval,
+			#{sheet_no},
+			#{pr_no},
+			#{quantity},
+			#{amount}
+		)
+	</insert>
+	
+	<select id="allOrderList" resultType="order2">
+		SELECT o.*, d.title title
+		FROM ordermanage o, draft d
+		WHERE o.dr_no = d.dr_no
+		<if test="searchType == 'w'.toString()">
+			AND sys_reg LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND con_c_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'pcw'.toString()">
+			AND (sys_reg LIKE '%' || #{keyword} || '%'
+			OR con_c_no LIKE '%' || #{keyword} || '%')
+		</if>
+		<if test="order == 'N'.toString()">
+			AND o.buy_c_no = #{c_no}
+		</if>
+		<if test="order == 'Y'.toString()">
+			AND o.con_c_no = #{c_no}
+		</if>
+		order BY o.sys_regdate desc
+	</select>
+	
+	<select id="getSheet_no" resultType="str">
+		SELECT sheet_no FROM orderDETAIL
+		 WHERE 1 = 1
+		  AND #{pr_no1}
+		<foreach collection="pr_no" item="pr_no" open="(" close=")" separator="or">
+		   pr_no = #{pr_no}
+    	</foreach>
+		 UNION
+		SELECT SHEET_NO FROM orderDETAIL
+		 WHERE 1 = 1
+		 AND #{pr_no1}
+		<foreach collection="pr_no" item="pr_no" open="(" close=")" separator="or">
+		   pr_no = #{pr_no}
+    	</foreach>
+	</select>
+	
+	<select id="getProduct_name" resultType="str">
+		SELECT pr_no FROM product WHERE pr_name LIKE '%' || #{keyword} || '%'
+	</select>
+	
+	<select id="insertOrderList" resultType="order2">
+		SELECT * FROM ordermanage 
+		WHERE o_no = #{sheet} 
+			AND buy_c_no = #{c_no}
+	</select>
+	
+	<select id="orderCount" resultType="int">
+		SELECT COUNT(*) FROM ordermanage WHERE buy_c_no = #{c_no}
+	</select>
+	
+	<select id="getOrderDetail" resultType="o_detail">
+		SELECT o.*, w.wh_name wh_name, p.pr_name pr_name, c.c_name c_name
+		FROM orderdetail o, warehouse w, product p, company c
+		WHERE o.o_no = #{o_no}
+		  AND o.wh_no = w.wh_no
+		  AND o.pr_no = p.pr_no
+		  AND w.c_no = c.c_no
+	</select>
+	
+	<select id="selectOrder" resultType="order2">
+		SELECT o.*, c.c_name con_c_name, d.dr_no dr_no, d.title title
+		 FROM ordermanage o, company c, draft d
+		WHERE o.o_no = #{o_no}
+		  AND o.con_c_no = c.c_no
+		  AND d.dr_no = o.dr_no
+	</select>
+	
+	<select id="getOrderDraft" resultType="draft">
+		SELECT * FROM draft WHERE dg_no = 'D003' AND pl_progress = '3' AND order_GB = 'N' AND c_no = #{c_no}
+	</select>
+	
+	<select id="getFileName" resultType="str">
+		SELECT files FROM draft WHERE dr_no = #{dr_no}
+	</select>
+	
+	<select id="getC_no" resultType="str">
+		SELECT c_no FROM company WHERE c_name = #{c_name}
+	</select>
+	
+	<select id="getContent" resultType="product">
+		SELECT * FROM product WHERE pr_name = #{name} AND rownum = 1
+	</select>
+	
+	<select id="getWhList" resultType="pro_wh">
+		SELECT w.*, p.pr_no, p.pr_name, p.PR_INPRICE, p.PR_EXPRICE, p.QUANTITY FROM warehouse w, product p WHERE p.wh_no = w.wh_no AND p.pr_name = #{pr_name}
+	</select>
+	
+	<insert id="orderRegist">
+		INSERT INTO ordermanage VALUES(
+				o_no_seq.nextval,
+				#{o_name},
+				'',
+				sysdate,
+				'',
+				'',
+				'접수중',
+				'',
+				'',
+				#{sys_reg},
+				#{buy_price},
+				#{unit_price},
+				#{buy_c_no},
+				#{con_c_no},
+				#{dr_no}
+		)
+	</insert>
+	
+	<update id="draftUpdate">
+		UPDATE draft SET order_gb = 'Y' WHERE dr_no = #{dr_no}
+	</update>
+	
+	<select id="getO_no" resultType="int">
+		SELECT o_no_seq.currval o_no FROM dual
+	</select>
+	
+	<insert id="insertOrderDetail">
+		INSERT INTO orderdetail VALUES(
+			od_no_seq.nextval,
+			#{o_no},
+			#{pr_no},
+			#{quantity},
+			#{buy_price},
+			#{unit_price},
+			#{wh_no},
+			#{lack}
+		)
+	</insert>
+	
+	<delete id="removeDetail">
+		DELETE orderdetail WHERE o_no = #{o_no}
+	</delete>
+	
+	<delete id="removeOrder">
+		DELETE ordermanage WHERE o_no = #{o_no}
+	</delete>
+	
+	<update id="draftOrder">
+		UPDATE draft SET order_gb = 'N'
+	</update>
+	
+	<select id="getC_name" resultType="str">
+		SELECT c_name FROM company WHERE c_no = #{c_no2}
+	</select>
+	
+	<update id="receipt">
+		UPDATE ordermanage SET progress = '접수완료' WHERE o_no = #{o_no}
+	</update>
+	
+	<update id="delivery">
+		UPDATE ordermanage SET progress = '배송중', deliverydate = sysdate WHERE o_no = #{o_no}
+	</update>
+	
+	<update id="receive">
+		UPDATE ordermanage SET progress = '입고 완료', receivedate = sysdate WHERE o_no = #{o_no}
+	</update>
+	
+	<update id="consumptionProduct">
+		UPDATE product SET quantity = quantity - #{quantity} WHERE pr_no = #{pr_no}
+	</update>
+	
+	<insert id="tr_History">
+		INSERT INTO tr_history VALUES(
+			'TH_' || LPAD(th_no_seq.nextval, 4, '0'),
+			sysdate,
+			sysdate,
+			#{sheet.buy_c_no},
+			#{sheet.emp_no},
+			'FC_003',
+			#{amount},
+			#{sheet.sheet_no},
+			'b',
+			'Y',
+			'/product/buyDetail.do?sheet_no=' || #{sheet.sheet_no},
+			#{quantity},
+			'',
+			'AC_001',
+			'T_001',
+			'',
+			'',
+			(SELECT e_name FROM emp WHERE emp_no = #{sheet.emp_no}),
+			'',
+			''
+		)
+	</insert>
+	
+	<insert id="tr_History2">
+		INSERT INTO tr_history VALUES(
+			'TH_' || LPAD(th_no_seq.nextval, 4, '0'),
+			sysdate,
+			sysdate,
+			#{order.buy_c_no},
+			#{emp_no},
+			'FC_003',
+			#{amount},
+			#{order.o_no},
+			'o',
+			'Y',
+			'/product/orderDetail.do?o_no=' || #{order.o_no} || '&amp;orders=N',
+			#{order.quantity},
+			'',
+			'AC_001',
+			'T_001',
+			'',
+			'',
+			#{order.sys_reg},
+			#{buy},
+			''
+		)
+	</insert>
+	
+	<select id="getOrderList" resultType="order2">
+		SELECT rownum, a.*
+		FROM (
+		SELECT o.*, c.c_name con_c_name
+		 FROM ordermanage o, company c
+		WHERE o.con_c_no = c.c_no
+		  AND o.buy_c_no = #{c_no}
+		  ORDER BY o.sys_regdate desc) a
+		 WHERE rownum <![CDATA[<]]> 4
+	</select>
+	
+<!-- 	생산을 목적으로 선택하는 제품들의 목록(희성이꼬) -->
+	<select id="getMakeProductList" resultType="product">
+		SELECT 	p.pr_name,
+				MAX(p.pr_no) pr_no,
+				MAX(p.pr_class) pr_class, 
+				MAX(c.c_name) c_name, 
+				MAX(c.c_no) c_no
+		FROM 	product p, company c
+		WHERE 	p.c_no = c.c_no
+		AND 	p.enabled = 'Y'
+		GROUP BY p.pr_name
+	</select>
+
+<!-- 	생산을 목적으로 선택하는 제품들의 목록(희성이꼬) -->
+	<select id="getMakeProduct" resultType="product">
+		SELECT 	p.pr_name,
+				MAX(p.pr_no) pr_no,
+				MAX(p.pr_class) pr_class, 
+				MAX(c.c_name) c_name, 
+				MAX(c.c_no) c_no
+		FROM 	product p, company c
+		WHERE 	p.c_no = c.c_no
+		AND 	p.enabled = 'Y'
+		<if test="searchType == 'w'.toString()">
+			AND p.pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND p.pr_class LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cw'.toString()">
+			AND (p.pr_name LIKE '%' || #{keyword} || '%'
+			OR p.pr_class LIKE '%' || #{keyword} || '%')
+		</if>
+		GROUP BY p.pr_name
+		ORDER BY p.pr_name
+	</select>
+	
+</mapper>

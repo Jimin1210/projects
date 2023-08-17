@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.QnaDAO">
+	
+	<!-- contact -->
+	<select id="selectQnaList" resultType="Map">
+		SELECT inq_no
+			  ,inq_title
+			  ,inq_con
+			  ,regdate
+			  ,u_no
+			  ,(SELECT ans_con FROM ans a WHERE a.inq_no = i.inq_no) ans_con
+		  FROM inquiry i
+		 WHERE u_no = #{u_no}
+		   ORDER BY inq_no desc
+	</select>
+	
+	<select id="selectQnaListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM inquiry
+		 WHERE u_no = #{u_no}
+	</select>
+	
+	<insert id="insertQna" >
+		INSERT INTO inquiry
+				(inq_no
+			  ,inq_con
+			  ,regdate
+			  ,u_no
+			  ,updatedate
+			  ,sys_up
+			  ,sys_reg)
+		VALUES(inq_seq.nextVal, #{inq_con}, sysdate, #{u_no}, sysdate, #{sys_up}, #{sys_reg})
+	</insert> 
+	
+	<delete id="deleteQna" parameterType="int">
+		DELETE FROM inquiry
+		WHERE inq_no = #{inq_no}	
+	</delete>
+	
+	<update id="modifyQna" >
+		UPDATE inquiry 
+		   SET inq_con = #{inq_con} 
+			   ,updatedate = sysdate
+		 WHERE inq_no = #{inq_no}
+	</update>
+
+	
+</mapper>

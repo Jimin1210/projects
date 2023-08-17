@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.ShopDAO">
+	
+	<select id="getShopList" resultType="shop">
+		SELECT *
+		FROM shop
+		WHERE 1=1 
+	</select>
+
+	<select id="getShop" resultType="shop">
+		SELECT * FROM shop WHERE 1=1
+		<if test="searchType == 'w'.toString()">
+			AND s_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND s_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cw'.toString()">
+			AND (s_name LIKE '%' || #{keyword} || '%'
+			OR s_no LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY s_name
+	</select>
+	
+	<sql id="search">
+		<if test="searchType == 'd'.toString()">
+			AND s_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 't'.toString()">
+			AND s_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			s_no LIKE '%' || #{keyword} || '%'
+			OR
+			s_name LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<select id="selectShopList" resultType="shop">
+		SELECT *
+		FROM shop
+		WHERE 1=1
+		  AND enabled = '1' 
+		<include refid="search"/>
+	</select>
+	
+	<select id="selectShopListCount" resultType="int">
+		SELECT COUNT(*)
+		 FROM shop
+		 WHERE 1=1
+		 <include refid="search"/>
+	</select>
+	
+	<insert id="insertShop" parameterType="shop">
+	
+		<selectKey keyProperty="s_no" order="BEFORE" resultType="java.lang.String">
+				SELECT ('SP_') || CASE 
+					WHEN LENGTH(shop_pr_seq.nextval) = 1
+					THEN '00' || shop_pr_seq.nextval
+					WHEN LENGTH(shop_pr_seq.nextval) = 2
+					THEN '0' || shop_pr_seq.nextval
+					ELSE '' || shop_pr_seq.nextval
+		   	    	END SP_NO
+			   FROM dual
+		</selectKey>
+		INSERT INTO shop (
+			s_no,
+			s_name,
+			sys_reg,
+			sys_up,
+			sys_regdate,
+			sys_updatedate,
+			enabled
+			)
+		VALUES(
+			#{s_no},
+			#{s_name},
+			#{sys_reg},
+			#{sys_up},
+			sysdate,
+			sysdate,
+			'1'
+		)
+	</insert>
+	
+	<select id="selectDetail" resultType="Map">
+		SELECT *
+		  FROM shop
+		 WHERE s_no = #{s_no}
+	</select>
+	
+	<delete id="deleteShop" parameterType="str">
+		DELETE FROM shop WHERE s_no = #{s_no}
+	</delete>
+	
+	<update id="modifyShop" parameterType="shop">
+		UPDATE shop SET s_name		=	#{s_name},
+						sys_updatedate = sysdate
+				  WHERE s_no = #{s_no}
+	</update>
+	
+</mapper>

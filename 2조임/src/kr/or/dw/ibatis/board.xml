@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+	PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+	"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="board">
+
+	<select id="selectBoardList" parameterClass="Map" resultClass="boardVO">
+		SELECT rownum, num, u.u_no u_no, u.nick nick, title, w_date, content, notice, gb_del, count
+		  FROM (
+				SELECT *
+				  FROM (
+				  		SELECT rownum rnum, v1.*
+						  FROM (
+						  		SELECT *
+								  FROM a_board
+								 WHERE gb_del = 'N'
+								 ORDER BY num DESC
+						  		) v1
+				  		) v2
+				) b ,a_user u
+		 WHERE b.u_no = u.u_no
+		   AND notice = #val#
+	</select>
+	<select id="selectBoardList2" parameterClass="int" resultClass="boardVO">
+		SELECT rownum, num, u.u_no u_no, u.nick nick, title, w_date, content, notice, gb_del, count
+		  FROM (
+				SELECT *
+				  FROM (
+				  		SELECT rownum rnum, v1.*
+						  FROM (
+						  		SELECT *
+								  FROM a_board
+								 WHERE gb_del = 'N'
+								 ORDER BY num DESC
+						  		) v1
+				  		) v2
+				) b ,a_user u
+		 WHERE b.u_no = u.u_no
+		   AND notice = #notice#
+	</select>
+	
+	<select id="selectBoardCount" parameterClass="int" resultClass="int">
+		SELECT COUNT(*) num
+		  FROM A_BOARD
+		 WHERE gb_del = 'N'
+		   AND notice = #val#
+	</select>
+	
+	<select id="selectBoardView" parameterClass="int" resultClass="boardVO">
+		SELECT num
+			  ,u.u_no
+			  ,title
+			  ,w_date
+			  ,content	
+			  ,notice
+			  ,u.nick nick
+			  ,count
+		  FROM a_board b
+		  	  ,a_user u
+		 WHERE b.u_no = u.u_no
+		   AND b.gb_del = 'N'
+		   AND num = #bd_no#
+	</select>
+	
+	<update id="updateCount" parameterClass="int">
+		UPDATE a_board SET count = count + 1 WHERE num = #bd_no#
+	</update>
+	
+	<insert id="insertBoard" parameterClass="BoardVO">
+		INSERT INTO A_BOARD VALUES (a_board_seq.nextval, #u_no#, #title#, sysdate, #content#, #notice#, 'N', 0)
+	</insert>
+	
+	<update id="deleteContent" parameterClass="int">
+		UPDATE a_board SET gb_del = 'Y' WHERE num = #bd_no#
+	</update>
+	
+	<update id="modify" parameterClass="map">
+		UPDATE a_board SET content = #content#, title = #title# WHERE num = #num#
+	</update>
+	
+	<insert id="insertReply" parameterClass="map">
+		INSERT INTO a_comments VALUES (a_comm_seq.nextval, #num#,#u_no#, #content#, sysdate, 'N', (SELECT nick FROM a_user WHERE u_no = #u_no#), #notice#)
+	</insert>
+	
+	<select id="getReplyList" parameterClass="int" resultClass="replyVO">
+		SELECT com_num, num, u_no, content, w_date, gb_del, nick FROM a_comments WHERE num = #num# ORDER BY com_num
+	</select>
+	
+	<select id="selectQA" parameterClass="map" resultClass="QABoardVo">
+		SELECT b.content content, b.num num, b.u_no u_no, b.w_date w_date, c.w_date w_date2, NVL(c.notice, 0) notice, u.nick nick, c.content content2
+		  FROM a_board b, a_comments c, a_user u
+		 WHERE b.notice = #notice#
+		   AND b.num = c.num(+)
+		   AND b.u_no = u.u_no
+		   ORDER BY num DESC
+	</select>
+</sqlMap>

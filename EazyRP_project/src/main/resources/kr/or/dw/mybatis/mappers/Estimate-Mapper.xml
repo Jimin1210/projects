@@ -1,0 +1,348 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.EstimateDAO">
+
+<sql id="search">
+		<if test="searchType == 'd'.toString()">
+			AND c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 't'.toString()">
+			AND e_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND progress LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			c_name LIKE '%' || #{keyword} || '%'
+			OR
+			e_name LIKE '%' || #{keyword} || '%'
+			OR
+			pr_name LIKE '%' || #{keyword} || '%'
+			OR
+			progress LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+
+<select id="selectEstimList" resultType="Map">
+	SELECT ed.EST_NO
+		  ,MAX(ed.regdate) regdate
+		  ,MAX((SELECT c_name FROM company WHERE c_no = ed.C_NO)) c_name
+		  ,MAX((SELECT e_name FROM emp WHERE emp_no = ed.EMP_NO)) e_name
+		  ,MAX((SELECT pr_name FROM product WHERE pr_no = ed.pr_no)) p_name
+		  ,MAX(e.enabled) enabled
+		  ,count(ed.PR_NO) pr_no
+		  ,CASE WHEN count(ed.PR_NO) <![CDATA[ > ]]> 1
+		  		THEN MAX((SELECT pr_name FROM product WHERE pr_no = ed.pr_no)) || ' 외 ' || (count(ed.PR_NO)-1)  || '건'
+		  		ELSE MAX((SELECT pr_name FROM product WHERE pr_no = ed.pr_no))
+		    END p_amount_name
+		  ,TO_CHAR(SUM(ed.amount), '999,999,999,999,999') || '원' amount
+		  ,MAX(ed.PROGRESS) progress
+		  ,MAX(e.FILES) files 
+		  ,MAX(e.REALFILENAME) realFileName
+		  ,CASE WHEN count(ed.PR_NO) <![CDATA[ > ]]> 1
+		  	THEN MAX((SELECT pr_st FROM product WHERE pr_no = ed.pr_no)) || ' 외 ' || (count(ed.PR_NO)-1)  || '건'
+		  	ELSE MAX((SELECT pr_st FROM product WHERE pr_no = ed.pr_no))
+		   END pr_st
+	  FROM ESTIMATE e , ESTDETAIL ed, company c, emp em, product p
+	 WHERE 1=1
+	   AND e.EST_NO = ed.EST_NO
+	   AND ed.c_no = c.c_no
+	   AND ed.emp_no = em.emp_no
+	   AND ed.pr_no = p.pr_no
+	   <include refid="search"/>   
+	 GROUP BY ed.est_no
+	 ORDER BY ed.est_no desc
+</select>
+
+<select id="selectSearchEstimateListCount" resultType="int">
+		
+		SELECT COUNT(*)
+		FROM ( SELECT COUNT(*)
+		  	   FROM ESTIMATE e , ESTDETAIL ed, company c, emp em, product p
+	 		   WHERE 1=1
+			   AND e.EST_NO = ed.EST_NO
+			   AND ed.c_no = c.c_no
+			   AND ed.emp_no = em.emp_no
+			   AND ed.pr_no = p.pr_no
+				<include refid="search"/>
+			   GROUP BY ed.est_no
+		)
+</select>
+
+
+<select id="selectDetail" parameterType="str" resultType="Map">
+	SELECT ed.EST_NO
+		  ,MAX(ed.regdate) regdate
+		  ,MAX((SELECT c_name FROM company WHERE c_no = ed.C_NO)) c_name
+		  ,MAX((SELECT e_name FROM emp WHERE emp_no = ed.EMP_NO)) e_name
+		  ,MAX(ed.emp_no) emp_no
+		  ,MAX((SELECT fc_name FROM fc WHERE fc_no = ed.fc_no)) fc_name
+		  ,MAX(ed.fc_no) fc_no
+		  ,MAX(e.enabled) enabled
+		  ,MAX((SELECT pr_name FROM product WHERE pr_no = ed.pr_no)) p_name
+		  ,MAX((SELECT wh_name FROM warehouse WHERE wh_no = ed.wh_no)) wh_name
+		  ,MAX((SELECT pr_exprice FROM product p WHERE p.pr_no = ed.pr_no)) pr_exprice
+		  ,MAX(ed.QUANTITY) QUANTITY
+		  ,count(ed.PR_NO) pr_no
+		  ,SUM(ed.amount) amount
+		  ,MAX(ed.PROGRESS) progress
+		  ,MAX(e.FILES) files
+		  ,MAX(e.realFileName) realFileName
+	  FROM ESTIMATE e , ESTDETAIL ed
+	 WHERE 1=1
+	   AND e.EST_NO = ed.EST_NO
+	   AND ed.est_no = #{est_no}
+	 GROUP BY ed.est_no
+</select>
+
+<select id="forEstimList" resultType="Map">
+	SELECT ROWNUM
+		  ,amount
+	  	  ,ed.quantity
+	  	  ,p.pr_exprice  pr_exprice
+	  	  ,p.pr_name p_name
+	  	  ,w.wh_name wh_name
+	  	  ,ed.estdetail_no
+	  	  ,w.wh_no
+	  	  ,p.pr_no
+	  	  ,ed.progress
+  	  FROM ESTDETAIL ed, product p, warehouse w
+	 where est_no = #{est_no}
+	   AND p.pr_no = ed.pr_no
+       AND w.wh_no = ed.wh_no
+</select>
+<!-- <select id="selectEname" parameterType="int" resultType="str"> -->
+<!-- 	SELECT e_name -->
+<!-- 	  FROM emp -->
+<!-- 	 WHERE emp_no = #{emp_no} -->
+<!-- </select> -->
+
+<!-- <select id="selectCname" parameterType="str" resultType="str"> -->
+<!-- 	SELECT c_name -->
+<!-- 	  FROM company -->
+<!-- 	 WHERE c_no = #{c_no} -->
+<!-- </select> -->
+
+<!-- <select id="selectPrname" parameterType="str" resultType="str"> -->
+<!-- 	SELECT pr_name -->
+<!-- 	  FROM product -->
+<!-- 	 WHERE pr_no = #{pr_no} -->
+<!-- </select> -->
+
+<!-- <select id="selectdetail" resultType="estimate"> -->
+<!-- 	SELECT * -->
+<!-- 	FROM estimate -->
+<!-- 	WHERE est_no = #{est_no} -->
+<!-- </select> -->
+<select id="getProductList" resultType="product">
+	SELECT 	p.*, c.* ,w.*
+	FROM 	product p, company c, warehouse w
+	WHERE 	p.c_no = c.c_no
+	AND p.WH_NO = w.WH_NO 		
+</select>
+
+
+<select id="getProduct" resultType="product">
+		SELECT p.*, c.c_name ,w.wh_name FROM product p, company c, warehouse w WHERE p.c_no = c.c_no AND p.WH_NO = w.WH_NO 
+		<if test="searchType == 'w'.toString()">
+			AND p.pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND c.c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cw'.toString()">
+			AND (p.pr_name LIKE '%' || #{keyword} || '%'
+			OR c.c_name LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY p.pr_name
+	</select>
+
+<select id="getWareHouseList" resultType="warehouse">
+	SELECT w.*, c.*
+	FROM warehouse w , company c
+	WHERE w.c_no = c.c_no
+</select>
+
+<select id="getWareHouse" resultType="warehouse">
+	SELECT w.*, c.c_name FROM warehouse w, company c WHERE w.c_no = c.c_no
+		<if test="searchType == 'w'.toString()">
+			AND w.wh_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND c.c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cw'.toString()">
+			AND (w.wh_name LIKE '%' || #{keyword} || '%'
+			OR c.c_name LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY w.wh_name
+</select>
+
+<select id="ename" resultType="str">
+	SELECT e_name
+	FROM emp
+	WHERE emp_no = #{empno}
+</select>
+
+<insert id="insertEstimate" parameterType="estimate">
+	
+	<selectKey keyProperty="est_no" order="BEFORE" resultType="java.lang.String">
+		<include refid="makeEstNoSeq"></include>
+	</selectKey>
+	INSERT INTO estimate (
+		est_no,
+		sys_regdate,
+		enabled,
+		sys_up,
+		sys_updatedate,
+		sys_reg,
+		files,
+		realFileName
+		)
+	VALUES(
+		  #{est_no},
+		  sysdate,
+		  'Y',
+		  #{emp_no},
+		  sysdate,
+		  #{emp_no},
+		  #{files},
+		  #{realFileName}	
+	)
+</insert>
+
+<sql id="makeEstNoSeq">
+	SELECT ('EST_') || CASE 
+						WHEN LENGTH(estimate_seq.nextval) = 1
+						THEN '00' || estimate_seq.nextval
+						WHEN LENGTH(estimate_seq.nextval) = 2
+						THEN '0' || estimate_seq.nextval
+						ELSE '' || estimate_seq.nextval
+			   	      END EST_NO
+	  FROM dual
+</sql>
+
+<sql id="makeEstDetailSeq">
+	SELECT estdetail_seq.nextval
+	  FROM dual
+</sql>
+
+<insert id="insertEstimateDetail" parameterType="estimate">
+	INSERT INTO estdetail (
+		estdetail_no,
+		est_no,
+		wh_no,
+		emp_no,
+		fc_no,
+		amount,
+		progress,
+		quantity,
+		pr_no,
+		regdate,
+		c_no
+		)
+	VALUES(
+		estdetail_seq.nextval,
+		#{est_no},
+		#{wh_no},
+		#{emp_no},
+		#{fc_no},
+		#{amount},
+		'0',
+		#{quantity},
+		#{pr_no},
+		sysdate,
+		(SELECT p.c_no FROM product p, company c WHERE p.c_no = c.c_no AND p.pr_no = #{pr_no})
+	)
+</insert>
+
+<select id="selectFile" resultType="str">
+	SELECT files
+	  FROM estimate
+	 WHERE files = #{files}
+</select>
+
+<update id="modifyEstimate">
+	UPDATE estimate SET sys_up = #{emp_no},
+						sys_updatedate = sysdate,
+						enabled = 'Y'
+						<if test="files != ''.toString()">
+							,files = #{files}
+						</if>
+						<if test="realFileName != ''.toString()">
+							,realFileName = #{realFileName}
+						</if>
+	WHERE est_no = #{est_no}
+</update>
+
+<update id="modifyEstimateDetail" >
+  MERGE 
+  INTO ESTDETAIL  
+  USING dual 
+	ON (#{estdetail_no} != 0)
+	WHEN MATCHED THEN 
+		UPDATE 
+		 SET
+		 WH_NO = #{wh_no}
+		 ,FC_NO = #{fc_no}
+		 ,AMOUNT = #{amount}
+		 ,PROGRESS = #{progress}
+		 ,EMP_NO = #{emp_no}
+		 ,QUANTITY = #{quantity}
+		 ,PR_NO = #{pr_no}
+		WHERE estdetail_no = #{estdetail_no}
+WHEN NOT MATCHED THEN 
+	INSERT (estdetail_no,
+		est_no,
+		wh_no,
+		emp_no,
+		fc_no,
+		amount,
+		progress,
+		quantity,
+		pr_no,
+		regdate,
+		c_no 
+		 )
+	VALUES (
+		estdetail_seq.nextval,
+		#{est_no},
+		#{wh_no},
+		#{emp_no},
+		#{fc_no},
+		#{amount},
+		#{progress},
+		#{quantity},
+		#{pr_no},
+		sysdate,
+		(SELECT p.c_no FROM product p, company c WHERE p.c_no = c.c_no AND p.pr_no = #{pr_no})		
+	)
+</update>
+
+<delete id="deleteEstimateDetail">
+	DELETE FROM estdetail 
+	WHERE estdetail_no = #{estdetail_no}
+</delete>
+
+
+<delete id="deleteEstimate" parameterType="str">
+	DELETE FROM estdetail
+		WHERE est_no = #{est_no}
+</delete>
+
+<update id="deletUpdateEstimate" >
+	UPDATE estimate SET ENABLED = 'N' WHERE est_no = #{est_no} 
+</update>
+
+<select id="selectEst" resultType="estimate">
+	SELECT *
+	  FROM estimate
+	 WHERE est_no = #{est_no}
+</select>
+
+</mapper>

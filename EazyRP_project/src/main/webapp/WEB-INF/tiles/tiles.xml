@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE tiles-definitions PUBLIC
+ 	"-//Apache Software Foundation//DTD Tiles Configuration 3.0//EN"
+ 	"http://tiles.apache.org/dtds/tiles-config_3_0.dtd">
+ 	
+<tiles-definitions>
+	<definition name="index" template="/WEB-INF/tiles/template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/header.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/include/sidebar.jsp"/>
+	</definition>
+	<!-- 둘다 표시 -->
+	<definition name="*.page" extends="index">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+	<definition name="*/*.page" extends="index">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="*/*/*.page" extends="index">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	<!-- widow open page / iframe page -->
+	<definition name="open" template="/WEB-INF/tiles/open_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/open_header.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/include/open_sidebar.jsp"/>
+	</definition>
+	
+	<!-- 헤더 사이드메뉴 (둘다)표시 안함 -->
+	<definition name="*.open" extends="open">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+	<definition name="*/*.open" extends="open">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="*/*/*.open" extends="open">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	<!-- widow open page / iframe page -->
+	<definition name="main" template="/WEB-INF/tiles/main_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/header.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/include/open_sidebar.jsp"/>
+	</definition>
+	
+	<!-- 메인(헤더만) -->
+	<definition name="*.main" extends="main">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+	<definition name="*/*.main" extends="main">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="*/*/*.main" extends="main">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+	<!-- widow open page / iframe page -->
+	<definition name="mymenu" template="/WEB-INF/tiles/myMenu_template.jsp">
+		<put-attribute name="header" value="/WEB-INF/views/include/header.jsp"/>
+		<put-attribute name="sidebar" value="/WEB-INF/views/include/myMenu_sidebar.jsp"/>
+	</definition>
+	
+	<!-- 마이메뉴(헤더, 마이메뉴사이드) -->
+	<definition name="*.mymenu" extends="mymenu">
+		<put-attribute name="body" value="/WEB-INF/views/{1}.jsp"/>
+	</definition>
+	<definition name="*/*.mymenu" extends="mymenu">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}.jsp"/>
+	</definition>
+	<definition name="*/*/*.mymenu" extends="mymenu">
+		<put-attribute name="body" value="/WEB-INF/views/{1}/{2}/{3}.jsp"/>
+	</definition>
+	
+		
+	
+</tiles-definitions>

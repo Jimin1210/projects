@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.DeptDAO">
+	
+	<!-- 셀렉트바 검색 -->
+	<sql id="search">
+		<if test="searchType == 'd'.toString()">
+			AND dname LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND dnoment LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			dname LIKE '%' || #{keyword} || '%'
+			OR
+			dnoment LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<select id="selectDeptList" resultType="dept">
+		SELECT *
+		  FROM dept
+		 WHERE enabled = 'YES'
+		   <include refid="search"/>
+		   ORDER BY dept_no
+	</select>
+
+	
+	<select id="selectDeptListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM dept
+		 WHERE enabled = 'YES'
+		   <include refid="search"/>
+	</select>
+	
+	<insert id="insertDept">
+		<selectKey keyProperty="dept_no" order="BEFORE" resultType="str">
+				SELECT ('D') || CASE 
+					WHEN LENGTH(dept_seq.nextval) = 1
+					THEN '00' || dept_seq.nextval
+					WHEN LENGTH(dept_seq.nextval) = 2
+					THEN '0' || dept_seq.nextval
+					ELSE '' || dept_seq.nextval
+		   	    	END dept_no
+			   FROM dual
+		</selectKey>
+		  INSERT INTO dept (
+							   dept_no
+							  ,dname
+							  ,dnoment
+							  ,enabled
+							   )
+						VALUES(
+							   #{dept_no}
+							  ,#{dname}
+							  ,#{dnoment}
+							  ,'YES'
+			   				   )
+	</insert>
+	
+	<select id="selectDeptDetail" resultType="dept">
+		SELECT dept_no
+			  ,dname
+			  ,dnoment
+		  FROM dept
+		 WHERE dept_no = #{dept_no}
+	</select>
+	
+	<update id="updateDept">
+		UPDATE dept SET dname = #{dname}
+						  ,dnoment = #{dnoment}
+		 WHERE dept_no = #{dept_no} 
+	</update>
+	
+	<update id="deleteDept">
+		UPDATE dept SET enabled = 'NO'
+		 WHERE dept_no = #{dept_no} 
+	</update>
+	
+</mapper>

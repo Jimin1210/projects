@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security" 
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-3.2.xsd
+		http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<!-- 인증 -->
+	<!-- 
+		사용자의 아이디/비밀번호를 인증처리하는 과정으로 Spring Security에서는 
+		AuthenticationManager, AuthenticationProvider가 있다.
+		
+		인증정보를 가져오는 기능을 하는 인터페이스가 org.springframework.security.core.userdetails.UserDetailsService 이다.
+		데이터베이스에서 정보를 가져오도록 이 인터페이스를 구현해둔 클래스가 org.springframework.security.core.userdetails.jdbc.JdbcDaoImpl 이다.
+	 -->
+	 <authentication-manager>
+	 	<authentication-provider ref="authenticator"/>
+	 </authentication-manager>
+	 
+	 <beans:bean id="authenticator"
+	 			 class="kr.or.dw.security.CustomAuthenticationProvider"/>
+	 
+	<!-- 인허가 -->
+	<!-- 
+		[표현식]
+		hasRole(role) : 현재 로그인된 사용자가 지정된 role을 가지고 있으면 true 를 반환한다. 제공된 role이 'ROLE_'로 시작하지 않으면 기본적으로 'ROLE_'를 추가한다.
+		hasAnyRole(role1, role2, ...) : 현재 로그인된 사용자가 콤마(,)로 분리하여 주어진 role들 중 하나라도 가지고 있으면 true를 반환한다.
+		hasAuthority(auth) : 현재 로그인된 사용자가 지정된 권한이 있으면 true를 반환한다. 
+		hasAnyAuthority(auth1, auth2, ...) : 현재 로그인된 사용자가 콤마(,)로 분리하여 주어진 권한들 중 하나라도 가지고 있으면 true를 반환한다. 
+	 -->
+	<http pattern="/resources/**" security="none"/> 
+	 
+	<http use-expressions="true" pattern="/**">
+		<access-denied-handler error-page="/security/accessDenied"/>
+<!-- 		<intercept-url pattern="/**/regist*" access="hasAnyRole('ROLE_ADMIN', 'ROLE_MANAGER')"/>		 -->
+<!-- 		<intercept-url pattern="/**/modify*" access="hasAnyRole('ROLE_ADMIN')"/>		 -->
+<!-- 		<intercept-url pattern="/**/remove*" access="hasAnyRole('ROLE_ADMIN')"/>		 -->
+<!-- 		<intercept-url pattern="/**/stop*" access="hasAnyRole('ROLE_ADMIN')"/>		 -->
+		
+		<intercept-url pattern="/**/main.do**" access="isAuthenticated()"/>
+<!-- 		<intercept-url pattern="/member/**" access="isAuthenticated()"/> -->
+
+<!-- 		<intercept-url pattern="/**" access="permitAll"/> -->
+		
+		<!-- 
+			<form-login> 요소는 로그인을 위해서 폼을 사용한다. 로그인 처리의 기본 URL은 "/login" 이다.
+			login-page : 커스텀 로그인 페이지를 지정한다.
+			default-target-url : 로그인 후에 기본으로 보여질 페이지이다. 특정 페이지를 클릭해서 로그인 화면이 나왔다면 로그인 성공 후 앞서 클릭한 페이지로 이동한다.
+			authentication-failure-url : 로그인 실패시 보여질 페이지를 지정한다. 기본값은 "/login?error" 이다.
+			username-parameter : 로그인 폼에 아이디 입력 필드에 사용될 name 값 이다. 기본값은 "username" 이다.
+			password-parameter : 로그인 폼에 비밀번호 입력 필드에 사용될 name 값 이다. 기본값은 "password" 이다.
+		 -->
+		<form-login
+			login-page="/common/loginForm"
+			login-processing-url="/common/login.do"
+			username-parameter="id"
+			password-parameter="pwd"
+			authentication-success-handler-ref="loginSuccessHandler"
+			authentication-failure-handler-ref="loginFailureHandler"
+		/>
+		
+<!-- 		<logout -->
+<!-- 			logout-url="/common/logout" -->
+<!-- 			invalidate-session="true" -->
+<!-- 			logout-success-url="/" -->
+<!-- 		/> -->
+		
+		<session-management invalid-session-url="/common/LoginTimeOut">
+			<concurrency-control 
+				expired-url="/common/LoginExpired"
+				max-sessions="1"
+				session-registry-ref="sessionRegistry"
+			/>
+		</session-management>
+		
+	</http>
+	
+	<beans:bean id="loginSuccessHandler" 
+				class="kr.or.dw.security.LoginSuccessHandler"
+				p:defaultTargetUrl="/common/main.do"/>
+	<beans:bean id="loginFailureHandler" 
+				class="kr.or.dw.security.LoginFailureHandler"/>
+	<beans:bean id="sessionRegistry"
+				class="org.springframework.security.core.session.SessionRegistryImpl"/>
+	<beans:bean id="sessionDestoryListener"
+				class="kr.or.dw.security.SessionDestroyListener"/>
+
+</beans:beans>

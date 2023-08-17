@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.SiDAO">
+
+<sql id="search">
+		<if test="searchType == 'd'.toString()">
+			AND e_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 't'.toString()">
+			AND wh_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND progress LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			e_name LIKE '%' || #{keyword} || '%'
+			OR
+			wh_name LIKE '%' || #{keyword} || '%'
+			OR
+			progress LIKE '%' || #{keyword} || '%'
+			OR
+			pr_name LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+
+<sql id="siSeq">
+SELECT ('SI_') || CASE 
+						WHEN LENGTH(si_seq.currval) = 1
+						THEN '00' || si_seq.currval
+						WHEN LENGTH(si_seq.currval) = 2
+						THEN '0' || si_seq.currval
+						ELSE '' || si_seq.currval
+			   	 END SI_NO
+	  FROM dual
+
+</sql>
+
+
+<select id="selectSiList" resultType="Map">
+SELECT s2.SI_NO,
+	 MAX((SELECT wh_name FROM WAREHOUSE WHERE wh_no = s2.WH_NO)) wh_name
+	,MAX((SELECT e_name FROM EMP WHERE emp_no = s2.EMP_NO)) e_name
+	,MAX(s.SYS_REGDATE) SYS_REGDATE
+	,CASE WHEN count(s2.PR_NO) <![CDATA[ > ]]> 1
+		  		THEN MAX((SELECT pr_name FROM product WHERE pr_no = s2.pr_no)) || ' 외 ' || (count(s2.PR_NO)-1)  || '건'
+		  		ELSE MAX((SELECT pr_name FROM product WHERE pr_no = s2.pr_no))
+	END pr_name
+	,MAX(s2.PROGRESS) progress
+	,SUM(s2.QUANTITY) || '개' quantity
+	,CASE WHEN count(s2.PR_NO) <![CDATA[ > ]]> 1
+		  		THEN MAX((SELECT pr_st FROM product WHERE pr_no = s2.pr_no)) || ' 외 ' || (count(s2.PR_NO)-1)  || '건'
+		  		ELSE MAX((SELECT pr_st FROM product WHERE pr_no = s2.pr_no))
+	END pr_st
+  FROM si s, emp e, warehouse w,product p ,SIDETAIL s2 
+ WHERE s2.emp_no = e.emp_no
+  AND s2.wh_no = w.wh_no
+  AND s2.pr_no = p.pr_no
+  AND s.SI_NO = s2.SI_NO
+    <include refid="search"/>
+  GROUP BY s2.SI_NO
+  ORDER BY 1 desc
+</select>
+	
+<select id="selectSearchSiListCount" resultType="int">
+	SELECT COUNT(*)
+	FROM (SELECT COUNT(*)
+			FROM si s, emp e, warehouse w, product p, sidetail s2
+			WHERE 1=1 
+   			AND s2.emp_no = e.emp_no
+  			AND s2.wh_no = w.wh_no
+   			AND s2.pr_no = p.pr_no
+   			AND s2.si_no = s.si_no
+		<include refid="search"/>
+   			GROUP BY s2.SI_NO
+   	)
+</select>	
+	
+
+<select id="selectSiDetail" resultType="Map">
+	SELECT s.*
+  FROM si s
+ WHERE s.SI_NO = #{SI_NO}
+</select>	
+	
+	
+<select id="forSiList" resultType="Map">
+SELECT ROWNUM,
+	s2.si_no
+  	  ,s2.SIDETAIL_NO 
+	  ,e.e_name e_name
+	  ,s2.shipdate 
+	  ,s2.progress progress
+	  ,s2.enabled 
+	  ,s2.content
+	  ,w.wh_name wh_name
+	  ,s2.quantity 
+	  ,s2.files 
+	  ,p.pr_name pr_name
+	  ,e.emp_no
+	  ,p.pr_no 
+	  ,s2.wh_no
+  FROM emp e, warehouse w,product p ,SIDETAIL s2 
+ WHERE s2.emp_no = e.emp_no
+   AND s2.wh_no = w.wh_no
+   AND s2.pr_no = p.pr_no
+   AND s2.SI_NO = #{si_no}
+ </select>
+	
+<select id="ename" resultType="str">
+	SELECT e_name
+	FROM emp
+	WHERE emp_no = #{empno}
+</select>
+	
+<sql id="makeSiSeq">
+	SELECT ('SI_') || CASE 
+						WHEN LENGTH(si_seq.nextval) = 1
+						THEN '00' || si_seq.nextval
+						WHEN LENGTH(si_seq.nextval) = 2
+						THEN '0' || si_seq.nextval
+						ELSE '' || si_seq.nextval
+			   	      END SI_NO
+	  FROM dual
+</sql>
+
+
+
+<insert id="insertSi" parameterType="si">
+	
+	<selectKey keyProperty="si_no" order="BEFORE" resultType="java.lang.String">
+		<include refid="makeSiSeq"></include>
+	</selectKey>
+	INSERT INTO si(
+		si_no,
+		sys_regdate,
+		sys_updatedate,
+		enabled,
+		sys_up
+	)
+	VALUES(
+		#{si_no},
+		sysdate,
+		sysdate,
+		'Y',
+		#{emp_no}
+	)
+</insert>
+	
+<sql id="makeSiDetailSeq">
+	SELECT sidetail_seq.nextval
+	  FROM dual
+</sql>	
+	
+<insert id="insertSiDetail" parameterType="si">
+	INSERT INTO sidetail (
+		sidetail_no,
+		si_no,
+		emp_no,
+		shipdate,
+		progress,
+		wh_no,
+		pr_no,
+		quantity,
+		content
+	)
+	values(
+		sidetail_seq.nextval,
+		#{si_no},
+		#{emp_no},
+		#{shipdate},
+		'0',
+		#{wh_no},
+		#{pr_no},
+		#{quantity},
+		#{content, jdbcType = VARCHAR}	
+	)
+</insert>
+	
+<update id="modifySi">
+	UPDATE si SET sys_up = #{emp_no}, sys_updatedate = sysdate
+	WHERE si_no = #{si_no} 
+</update>
+	
+<update id="modifySiDetail">
+	
+  MERGE 
+  INTO sidetail
+	USING dual
+	ON (#{sidetail_no} != 0) 
+	WHEN MATCHED THEN 
+	UPDATE  
+ 	SET 
+ 	wh_no = #{wh_no},
+ 	pr_no = #{pr_no},
+ 	quantity = #{quantity},
+	shipdate = #{shipdate}, 
+	content = #{content, jdbcType = VARCHAR},
+	progress = #{progress}
+WHERE sidetail_no = #{sidetail_no}
+WHEN NOT MATCHED THEN 
+	INSERT (
+		sidetail_no,
+		si_no,
+		emp_no,
+		shipdate,
+		progress,
+		wh_no,
+		pr_no,
+		quantity,
+		content
+	)
+	VALUES(
+		sidetail_seq.nextval,
+		#{si_no},
+		#{emp_no},
+		#{shipdate},
+		#{progress},
+		#{wh_no},
+		#{pr_no},
+		#{quantity},
+		#{content, jdbcType = VARCHAR}	
+	)
+</update>
+	
+<delete id="deleteSiDetail">
+	DELETE FROM sidetail
+	WHERE sidetail_no = #{sidetail_no}
+
+</delete>	
+	
+<delete id="siRemove" parameterType="str">
+	DELETE FROM sidetail
+	WHERE si_no = #{si_no}
+</delete>	
+	
+<update id="siUpdateRemove">
+	UPDATE si SET enabled = 'N' WHERE si_no = #{si_no}
+</update>
+</mapper>

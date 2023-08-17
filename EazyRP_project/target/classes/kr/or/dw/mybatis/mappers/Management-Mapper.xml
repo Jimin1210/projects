@@ -1,0 +1,389 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.ManagementDAO">
+	<select id="getAllDraft" resultType="draft">
+		SELECT ROWNUM, d.*, e.e_name e_name
+		FROM draft d, emp e
+		WHERE d.emp_no = e.emp_no
+		  AND (d.emp_no = #{emp_no}
+		  OR d.pay_no = #{emp_no})
+		  <if test="searchType == 'd'.toString()">
+				AND d.gb LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 't'.toString()">
+				AND d.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND e.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'p'.toString()">
+			 	AND d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'all'.toString()">
+				AND ( 
+				d.gb LIKE '%' || #{keyword} || '%'
+				OR
+				d.title LIKE '%' || #{keyword} || '%'
+				OR
+				e.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+		ORDER BY d.DR_NO DESC
+	</select>
+	
+	<select id="getRegistDraft" resultType="draft">
+		SELECT ROWNUM, d.*, e.e_name e_name
+		FROM draft d, emp e
+		WHERE d.emp_no = e.emp_no
+		  AND d.emp_no = #{emp_no}
+		  <if test="searchType == 'd'.toString()">
+				AND d.gb LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 't'.toString()">
+				AND d.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND e.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'p'.toString()">
+			 	AND d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'all'.toString()">
+				AND ( 
+				d.gb LIKE '%' || #{keyword} || '%'
+				OR
+				d.title LIKE '%' || #{keyword} || '%'
+				OR
+				e.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+		ORDER BY d.DR_NO DESC
+	</select>
+	
+	<select id="getDraftCount" resultType="int">
+		SELECT COUNT(*) FROM draft d, emp e
+		WHERE d.emp_no = e.emp_no
+		  AND (d.emp_no = #{emp_no}
+		  OR d.pay_no = #{emp_no})
+		 <if test="searchType == 'd'.toString()">
+				AND d.gb LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 't'.toString()">
+				AND d.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND e.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'p'.toString()">
+			 	AND d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'all'.toString()">
+				AND ( 
+				d.gb LIKE '%' || #{keyword} || '%'
+				OR
+				d.title LIKE '%' || #{keyword} || '%'
+				OR
+				e.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+	</select>
+	
+	<select id="getRegistDraftCount" resultType="int">
+		SELECT COUNT(*) FROM draft d, emp e
+		WHERE d.emp_no = e.emp_no
+		  AND d.emp_no = #{emp_no}
+		 <if test="searchType == 'd'.toString()">
+				AND d.gb LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 't'.toString()">
+				AND d.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND e.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'p'.toString()">
+			 	AND d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'all'.toString()">
+				AND ( 
+				d.gb LIKE '%' || #{keyword} || '%'
+				OR
+				d.title LIKE '%' || #{keyword} || '%'
+				OR
+				e.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				d.PL_PROGRESS LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+	</select>
+	
+	<insert id="documentRegist">
+		INSERT INTO draft VALUES (
+		'D'||LPAD(dr_no_seq.nextval, 4, '0'),
+		#{emp_no},
+		sysdate,
+		#{title},
+		#{dg_no},
+		#{gb},
+		#{files},
+		'0',
+		#{con},
+		#{pl_no},
+		'',
+		#{c_no},
+		#{realFileName},
+		'',
+		(SELECT emp_no1 FROM pl WHERE pl_no = #{pl_no}),
+		'N'
+		)
+		
+	</insert>
+	
+	<select id="selectDraft" resultType="draft">
+		SELECT d.*, e.e_name e_name
+		FROM draft d, emp e
+		WHERE d.dr_no = #{dr_no}
+		  AND d.emp_no = e.emp_no
+		ORDER BY d.DR_NO
+	</select>
+	
+	<select id="getPl" resultType="pl">
+		SELECT *
+		  FROM pl
+		 WHERE pl_no = #{pl_no}
+	</select>
+	
+	<select id="getRank" resultType="str">
+		SELECT e_rank
+		  FROM emp
+		 WHERE emp_no = #{emp_no1}
+		   OR emp_no = #{emp_no2}
+		   OR emp_no = #{emp_no3}
+	</select>
+	
+	<update id="updateDraft">
+		UPDATE draft SET pl_progress = #{no} 
+		<if test="no == 1">
+			, pay_no = (SELECT emp_no2 FROM pl WHERE pl_no = #{pl_no})
+		</if>
+		<if test="no == 2">
+			, pay_no = (SELECT emp_no3 FROM pl WHERE pl_no = #{pl_no})
+		</if>
+		<if test="no == 3">
+			, pay_no = ''
+		</if>
+		WHERE dr_no = #{dr_no}
+		
+	</update>
+	
+	<update id="failDraft">
+		UPDATE draft SET pay_no = 0, pl_progress = #{no}, failComment = #{failComment} WHERE dr_no = #{dr_no}
+	</update>
+	
+	<select id="getE_name" resultType="str">
+		SELECT e_name FROM emp WHERE emp_no = #{emp_no}
+	</select>
+	
+	<select id="getDraft" resultType="draft">
+		SELECT * FROM draft WHERE dr_no = #{dr_no}
+	</select>
+	
+	<select id="getEmpList" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE e.c_no = c.c_no
+				AND c.c_no = #{c_no}
+		ORDER BY e.e_name
+
+	</select>
+	
+	<select id="getEmp" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE e.c_no = c.c_no
+			<if test="searchType == 'w'.toString()">
+				AND e.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'c'.toString()">
+				AND c.c_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'cw'.toString()">
+				AND (e.e_name LIKE '%' || #{keyword} || '%'
+				OR c.c_name LIKE '%' || #{keyword} || '%')
+			</if>
+			AND c.c_no = #{c_no}
+		ORDER BY e.e_name
+	</select>
+	
+	<update id="documentModify">
+		UPDATE draft SET 
+		sys_updatedate = sysdate, 
+		failcomment = null,
+		pl_no = #{pl_no},
+		con = #{con},
+		dg_no = #{dg_no},
+		pl_progress = '0',
+		files = #{files},
+		gb = #{gb},
+		title = #{title},
+		realfilename = #{realFileName},
+		pay_no = (SELECT emp_no1 FROM pl WHERE pl_no = #{pl_no})
+		WHERE dr_no = #{dr_no}
+	</update>
+	
+	<select id="getFileName" resultType="str">
+		SELECT files FROM draft WHERE dr_no = #{dr_no}
+	</select>
+	
+	<delete id="deleteDocument">
+		DELETE draft WHERE dr_no = #{dr_no}
+	</delete>
+	
+	<select id="getAllPl" resultType="pl">
+		SELECT * FROM pl WHERE c_no = #{c_no}
+	</select>
+	
+	<insert id="insertPayLine">
+		INSERT INTO PL VALUES(
+		'P'||LPAD(pl_no_seq.nextval, 4, '0'),
+		#{pl_name},
+		#{emp_no1},
+		#{emp_no2},
+		#{emp_no3},
+		'Y',
+		#{e_name1},
+		#{e_name2},
+		#{e_name3},
+		#{c_no},
+		#{comments}
+		)
+	</insert>
+	
+	<delete id="deletePayLine">
+		DELETE pl WHERE pl_no = #{pl_no}
+	</delete>
+	
+	<update id="modifyPayLine">
+		UPDATE pl SET 
+		pl_name = #{pl_name}, 
+		emp_no1 = #{emp_no1},
+		emp_no2 = #{emp_no2},
+		emp_no3 = #{emp_no3},
+		e_name1 = #{e_name1},
+		e_name2 = #{e_name2},
+		e_name3 = #{e_name3},
+		comments = #{comments}
+		WHERE pl_no = #{pl_no}
+	</update>
+	
+	<select id="getDraftGb" resultType="draftGb">
+		SELECT dg_name, dg_no
+		  FROM draft_gb
+	</select>
+	
+	<select id="getImgFile" resultType="str">
+		SELECT stampimg FROM emp WHERE emp_no = #{a}
+	</select>
+	
+	<select id="getHistory" resultType="pa">
+		SELECT p.*, pg.pg_name
+		  FROM pa p, pa_gb pg
+		 WHERE p.pg_no = pg.pg_no
+		   AND c_no = #{c_no}
+		 <if test="searchType == 'n'.toString()">
+			AND p.emp_no IN (SELECT emp_no FROM emp WHERE e_name LIKE '%' || #{keyword} || '%')
+		</if>
+		<if test="searchType == 'd'.toString()">
+			AND (p.predept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%')
+			 OR p.nextdept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%'))
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (p.emp_no IN (SELECT emp_no FROM emp WHERE e_name LIKE '%' || #{keyword} || '%')
+			 OR p.predept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%')
+			 OR p.nextdept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%'))
+		</if>
+		<if test="cri2.startDate != ''.toString() and cri2.endDate != ''.toString()">
+			AND p.padate BETWEEN TO_DATE(#{cri2.startDate}, 'YYYY-MM-DD') AND TO_DATE(#{cri2.endDate}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+		</if>
+		<if test="cri2.startDate != ''.toString() and cri2.endDate == ''.toString()">
+			AND p.padate <![CDATA[>]]> #{cri2.startDate}
+		</if>
+		<if test="cri2.startDate == ''.toString() and cri2.endDate != ''.toString()">
+			AND p.padate <![CDATA[<]]> #{cri2.endDate}
+		</if>
+		
+		ORDER BY p.PA_NO DESC
+	</select>
+	
+	
+	<select id="getNames" resultType="str">
+		SELECT e.e_name
+		  FROM pa p, emp e
+		 WHERE p.emp_no = e.emp_no
+		 <if test="searchType == 'n'.toString()">
+			AND p.emp_no IN (SELECT emp_no FROM emp WHERE e_name LIKE '%' || #{keyword} || '%')
+		</if>
+		<if test="searchType == 'd'.toString()">
+			AND (p.predept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%')
+			 OR p.nextdept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%'))
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (p.emp_no IN (SELECT emp_no FROM emp WHERE e_name LIKE '%' || #{keyword} || '%')
+			 OR p.predept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%')
+			 OR p.nextdept IN (SELECT dname FROM dept WHERE dname LIKE '%' || #{keyword} || '%'))
+		</if>
+		<if test="cri2.startDate != ''.toString() and cri2.endDate != ''.toString()">
+			AND p.padate BETWEEN TO_DATE(#{cri2.startDate}, 'YYYY-MM-DD') AND TO_DATE(#{cri2.endDate}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+		</if>
+		<if test="cri2.startDate != ''.toString() and cri2.endDate == ''.toString()">
+			AND p.padate <![CDATA[>]]> #{cri2.startDate}
+		</if>
+		<if test="cri2.startDate == ''.toString() and cri2.endDate != ''.toString()">
+			AND p.padate <![CDATA[<]]> #{cri2.endDate}
+		</if>
+		
+		ORDER BY p.PA_NO DESC
+	</select>
+	
+	<select id="getDept" resultType="dept">
+		SELECT * FROM dept WHERE enabled = 'YES'
+	</select>
+	
+	<select id="getDname" resultType="str">
+		SELECT dname
+		FROM dept
+		WHERE dept_no = 
+		(SELECT dept_no FROM emp WHERE emp_no = #{emp_no})
+	</select>
+	
+	<insert id="paRegist">
+		INSERT INTO pa VALUES(
+			pa_no_seq.nextval,
+			sysdate,
+			#{padate},
+			#{emp_no},
+			#{prerank},
+			#{nextrank},
+			'N',
+			#{predept},
+			#{nextdept},
+			'',
+			'',
+			'',
+			#{pg_no},
+			#{c_no}
+		)
+	</insert>
+	
+	<update id="updateDept">
+		UPDATE emp SET dept_no = #{nextdept} WHERE emp_no = #{emp_no}
+	</update>
+	
+	<update id="updateRank">
+		UPDATE emp SET e_rank = #{nextrank} WHERE emp_no = #{emp_no}
+	</update>
+	
+	
+</mapper>

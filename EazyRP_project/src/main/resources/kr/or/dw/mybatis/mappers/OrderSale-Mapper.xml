@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.OrderSaleDAO">
+	
+	<sql id="search">
+		<if test="searchType == 'c'.toString()">
+			AND c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND pr_exprice LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			c_name LIKE '%' || #{keyword} || '%'
+			OR
+			pr_exprice LIKE '%' || #{keyword} || '%'
+			OR
+			pr_name LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	
+	<select id="selectSaleList" resultType="Map">
+		SELECT s.SHEET_NO,s.pr_name ,s.SYS_REGDATE , e.e_name e_name, TO_CHAR(s.price, '999,999,999,999,999') price
+		 FROM S_SHEET s, emp e
+		WHERE s.emp_no = e.emp_no
+		  AND s.con_c_no = #{c_no}
+	  	<if test="searchType == 'a'.toString()">
+			AND e.e_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'b'.toString()">
+			AND s.progress LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND s.pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'd'.toString()">
+			AND s.buy_c_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (e.e_name LIKE '%' || #{keyword} || '%'
+			OR s.progress LIKE '%' || #{keyword} || '%'
+			OR s.pr_name LIKE '%' || #{keyword} || '%'
+			OR s.buy_c_no LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY s.sheet_no desc
+	</select>
+	
+	<select id="selectSearchSaleListCount" resultType="int">
+		SELECT COUNT(*)
+		 FROM S_SHEET s, emp e , company c
+		WHERE s.emp_no = e.emp_no
+		  AND s.con_c_no = #{c_no}
+		  AND s.buy_c_no = c.c_no
+		<if test="searchType == 'a'.toString()">
+			AND e.e_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'b'.toString()">
+			AND s.progress LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND s.pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'd'.toString()">
+			AND s.buy_c_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (e.e_name LIKE '%' || #{keyword} || '%'
+			OR s.progress LIKE '%' || #{keyword} || '%'
+			OR s.pr_name LIKE '%' || #{keyword} || '%'
+			OR s.buy_c_no LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY s.sheet_no desc	
+	</select>
+	
+	<select id="getSaleDetail" resultType="saleDetail">
+		SELECT s.*, p.PR_NAME 
+		  FROM sale_detail s, PRODUCT p 
+		 WHERE sheet_no = #{sheet_no}
+		AND s.PR_NO = p.PR_NO
+	</select>
+	
+	<select id="getSheet" resultType="ssheet">
+		SELECT s.*, e.e_name e_name
+		FROM s_sheet s, emp e
+		WHERE s.emp_no = e.emp_no
+		AND sheet_no = #{sheet_no}
+	</select>
+	
+	<insert id="insertProudctDetail">
+		INSERT INTO SALE_DETAIL VALUES(
+			s_no_seq.nextval,
+			#{sheet_no},
+			#{pr_no},
+			#{quantity},
+			#{amount}
+		)
+	</insert>
+	
+	<insert id="insertProductSale">
+		INSERT INTO s_sheet VALUES(
+			sheet_no_seq.nextval,
+			sysdate,
+			#{emp_no},
+			#{fc_no},
+			#{price},
+			'진행대기',
+			'',
+			'',
+			'',
+			'',
+			'',
+			#{buy_c_no},
+			#{con_c_no},
+			#{pr_name}	
+		)
+	</insert>
+	
+	<select id="insertSheetNo" resultType="int">
+		SELECT sheet_no_seq.CURRVAL sheet_no FROM dual
+	</select>
+	
+	<delete id="detailRemove">
+		DELETE FROM sale_detail WHERE sheet_no = #{sheet_no}
+	</delete>
+	
+	<delete id="saleRemove">
+		DELETE FROM s_sheet WHERE sheet_no = #{sheet_no}
+	</delete>
+	
+	
+</mapper>

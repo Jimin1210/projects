@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.WarehouseDAO">
+	
+	<!-- 셀렉트바 검색 -->
+	<sql id="search">
+		<if test="cri.searchType == 'w'.toString()">
+			AND wh_name LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'a'.toString()">
+			AND w.addr LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'g'.toString()">
+			AND wh_gb LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'all'.toString()">
+			AND (
+			wh_name LIKE '%' || #{cri.keyword} || '%'
+			OR
+			w.addr LIKE '%' || #{cri.keyword} || '%'
+			OR
+			wh_gb LIKE '%' || #{cri.keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<!-- contact -->
+	<select id="selectWarehouseList" resultType="warehouse">
+		SELECT wh_no
+			  ,wh_name
+			  ,wh_gb
+			  ,w.addr
+			  ,w.enabled
+			  ,c.c_name c_no
+		  FROM warehouse w, company c
+		 WHERE w.c_no = c.c_no
+		   AND w.enabled = 'Y'
+		   AND w.c_no = #{c_no, jdbcType = VARCHAR}
+		   <include refid="search"/>
+		   ORDER BY wh_no
+	</select>
+
+	
+	<select id="selectWarehouseListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM warehouse w, company c
+		 WHERE w.c_no = c.c_no
+		   AND w.enabled = 'Y'
+		   AND w.c_no = #{c_no, jdbcType = VARCHAR}
+		   <include refid="search"/>
+	</select>
+	
+	<select id="selectWarehouseDetail" resultType="Map">
+		SELECT wh_no
+			  ,wh_name
+			  ,wh_gb
+			  ,w.addr
+			  ,w.enabled
+			  ,c.c_name
+			  ,w.c_no
+		  FROM warehouse w, company c
+		 WHERE w.c_no = c.c_no
+		   AND w.enabled = 'Y'
+		   AND wh_no = #{wh_no}
+	</select>
+	
+	<select id="selectFindSearchCompany" resultType="company">
+		SELECT *
+		  FROM company
+		 WHERE enabled = 'YES'
+		 <if test="searchType == 'w'.toString()">
+			AND c_rname LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'a'.toString()">
+			AND addr LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'p'.toString()">
+			AND keyword LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (c_rname LIKE '%' || #{keyword} || '%'
+			OR c_name LIKE '%' || #{keyword} || '%'
+			OR keyword LIKE '%' || #{keyword} || '%'
+			OR addr LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY c_name
+	</select>
+	
+	<select id="selectFindCompanyList" resultType="company">
+		SELECT *
+		  FROM company
+		 WHERE enabled = 'YES'
+		 ORDER BY c_name
+	</select>
+	
+	<update id="updateWarehouse">
+		UPDATE warehouse SET wh_no = #{wh_no}
+						  ,wh_name = #{wh_name}
+						  ,wh_gb = #{wh_gb}
+						  ,addr = #{addr}
+						  ,c_no = #{c_no}
+						  ,sys_up = #{sys_up}
+						  ,sys_updatedate = sysdate
+		 WHERE wh_no = #{wh_no} 
+	</update>
+	
+	<insert id="insertWarehouse">
+		<selectKey keyProperty="wh_no" order="BEFORE" resultType="java.lang.String">
+				SELECT ('WH_') || CASE 
+					WHEN LENGTH(warehouse_seq.nextval) = 1
+					THEN '00' || warehouse_seq.nextval
+					WHEN LENGTH(warehouse_seq.nextval) = 2
+					THEN '0' || warehouse_seq.nextval
+					ELSE '' || warehouse_seq.nextval
+		   	    	END WH_NO
+			   FROM dual
+		</selectKey>
+		INSERT INTO warehouse (
+							   wh_no
+							  ,wh_name
+							  ,wh_gb
+							  ,addr
+							  ,enabled
+							  ,c_no
+							  ,sys_up
+							  ,sys_regdate
+							  ,sys_updatedate
+							  ,sys_reg
+							   )
+						VALUES(
+							   #{wh_no}
+							  ,#{wh_name}
+							  ,#{wh_gb}
+							  ,#{addr}
+							  ,'Y'
+							  ,#{c_no}
+							  ,#{sys_up}
+							  ,sysdate
+							  ,sysdate
+							  ,#{sys_reg}
+			   				   )
+	</insert>
+	
+	<update id="deleteWarehouse">
+		UPDATE warehouse SET enabled = 'N'
+						    ,sys_up = #{sys_up}
+						    ,sys_updatedate = sysdate
+		 WHERE wh_no = #{wh_no} 
+	</update>
+	
+</mapper>

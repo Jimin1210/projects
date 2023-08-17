@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans https://www.springframework.org/schema/beans/spring-beans.xsd">
+
+<!-- 	<bean id="picturePath" class="java.lang.String">
+		<constructor-arg value="${member.picture.upload}"></constructor-arg>
+	</bean> -->
+
+
+	<!-- <bean id="memberService" class="kr.or.dw.service.MemberServiceImpl"/> -->
+	<bean id="menuService" class="kr.or.dw.service.MenuServiceImpl"/>
+	<bean id="processService" class="kr.or.dw.service.ProcessServiceImpl"/>
+	<bean id="mymenuService" class="kr.or.dw.service.MyMenuServiceImpl"/>
+	<bean id="estimateService" class="kr.or.dw.service.EstimateServiceImpl"/>
+	<bean id="siService" class="kr.or.dw.service.SiServiceImpl"/>
+	<bean id="orderSaleService" class="kr.or.dw.service.OrderSaleServiceImpl"/>
+	<bean id="managementService" class="kr.or.dw.service.ManagementServiceImpl"/>
+	<bean id="qualityService" class="kr.or.dw.service.QualityServiceImpl"/>
+	<bean id="memberService" class="kr.or.dw.service.MemberServiceImpl"/>
+	<bean id="mailService" class="kr.or.dw.service.MailSendServiceImpl"/>
+	<bean id="qnaService" class="kr.or.dw.service.QnaServiceImpl"/>
+	<bean id="asService" class="kr.or.dw.service.AsServiceImpl"/>
+	
+	<bean id="productService" class="kr.or.dw.service.ProductServiceImpl"/>
+	
+	<bean id="merchandiseService" class="kr.or.dw.service.MerchandiseServiceImpl"/>
+	<bean id="shopService" class="kr.or.dw.service.ShopServiceImpl"/>
+	<bean id="orderService" class="kr.or.dw.service.OrderServiceImpl"/>
+	<bean id="empsalService" class="kr.or.dw.service.EmpSalServiceImpl"/>
+
+	<bean id="whService" class="kr.or.dw.service.WhServiceImpl"/>
+	<bean id="factoryService" class="kr.or.dw.service.FactoryServiceImpl"/>
+	<bean id="workOrderService" class="kr.or.dw.service.WorkOrderServiceImpl"/>
+	<bean id="whTransferService" class="kr.or.dw.service.WhTransferServiceImpl"/>
+	<bean id="rownumService" class="kr.or.dw.service.RownumServiceImpl"/>
+	
+	<bean id="contactService" class="kr.or.dw.service.ContactServiceImpl"/>
+	<bean id="warehouseService" class="kr.or.dw.service.WarehouseServiceImpl"/>
+	<bean id="itemService" class="kr.or.dw.service.ItemServiceImpl"/>
+	<bean id="profitLossService" class="kr.or.dw.service.ProfitLossServiceImpl"/>
+	<bean id="deptService" class="kr.or.dw.service.DeptServiceImpl"/>
+	<bean id="basicFactoryService" class="kr.or.dw.service.BasicFactoryServiceImpl"/>
+	
+	<!-- 풀캘린더 API -->
+	<bean id="calendarService" class="kr.or.dw.service.CalendarServiceImpl"/>
+   
+   <!-- 이메일 인증 관련 빈 등록 -->
+   <bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl">
+      <property name="host" value="smtp.gmail.com" />
+      <property name="port" value="587" />
+      <property name="username" value="olo56576044@gmail.com" />
+      <property name="password" value="qbksnrctiwklfjmi" />
+      <property name="javaMailProperties">
+         <props>
+                <prop key="mail.transport.protocol">smtp</prop>
+                <prop key="mail.smtp.auth">true</prop>
+                <!-- gmail의 경우 보안문제 업데이트로 인해 SSLSocketFactory를 추가해야 smtp 사용 가능. -->
+                <prop key="mail.smtp.socketFactory.class">javax.net.ssl.SSLSocketFactory</prop>
+                <prop key="mail.smtp.starttls.enable">true</prop>
+                <prop key="mail.debug">true</prop>
+                <prop key="mail.smtp.ssl.trust">smtp.gmail.com</prop>
+				<prop key="mail.smtp.ssl.protocols">TLSv1.2</prop>
+            </props>
+      </property>
+      
+   </bean>
+</beans>

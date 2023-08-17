@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap
+	PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN"
+	"http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<sqlMap namespace="admin">
+
+
+	<select id="selectAdminList" resultClass="adminVo">
+		SELECT u_no
+			  ,id
+			  ,pwd
+			  ,name
+			  ,nick
+			  ,pos
+			  ,loc
+			  ,hiredate
+			  ,NVL(sal,0) sal			  
+			  ,birth
+			  ,tel
+			  ,addr
+			  ,email
+			  ,gender  
+			  ,gb_out
+			  ,picture
+		  FROM a_user
+		 WHERE gb_out = 'N'
+		   AND pos != '0'
+		  ORDER BY u_no
+	</select>
+	
+	<select id="selectAdmin" parameterClass="int" resultClass= "adminVo">
+		SELECT u_no
+			  ,id
+			  ,pwd
+			  ,name
+			  ,nick
+			  ,pos
+			  ,loc
+			  ,hiredate
+			  ,NVL(sal,0) sal			  
+			  ,birth
+			  ,tel
+			  ,addr
+			  ,email
+			  ,gender  
+			  ,gb_out
+			  ,picture
+		FROM a_user
+		WHERE u_no = #u_no#
+		  AND u_no != 0
+	</select>
+	
+	<update id="adminUpdate" parameterClass="adminVo">
+		UPDATE a_user SET pos = #pos#, sal = #sal# WHERE u_no = #u_no# 
+	</update>
+	
+	
+	
+	<insert id="insertAdminView" parameterClass="adminVo">
+	
+	<selectKey keyProperty="u_no" resultClass="int">
+		SELECT a_user_seq.nextval u_no FROM dual
+	</selectKey>
+	
+		INSERT INTO a_user (u_no,
+							nick,
+							id,
+							pwd,
+							birth,
+							name,
+							addr,
+							pos,
+							loc,
+							hiredate,
+							sal,
+							tel,
+							email,
+							gender,
+							gb_out,
+							picture
+							) 
+		VALUES (#u_no#,
+				#name#,
+				#id#,
+				#pwd#,
+				#birth#,
+				#name#,
+				#addr#,
+				#pos#,
+				#loc#,
+				#hiredate#,
+				#sal#,
+				#tel#,
+				#email#,
+				#gender#,
+				'N',
+				1
+				)					
+	</insert>
+	<delete id = "adminDelete" parameterClass="int">
+		DELETE FROM a_user 
+		WHERE u_no = #u_no#
+	</delete>
+	
+	
+	<select id = "selectCommList" parameterClass= "int" resultClass="commVo">
+		SELECT c_no ,u_no,TO_CHAR(c_date,'YYYY-mm-DD') c_date,
+			   TO_CHAR(W_INCEN,'FM9,999,999') W_INCEN, TO_CHAR(N_INCEN,'FM9,999,999') N_INCEN,
+			   TO_CHAR(INCEN ,'FM9,999,999')INCEN, TO_CHAR(TOTAL,'FM9,999,999') TOTAL,
+			   TO_CHAR(DEDUCTION,'FM9,999,999') DEDUCTION, TO_CHAR(ACTUAL,'FM9,999,999') ACTUAL,
+			   NAME
+		FROM a_comm
+		WHERE u_no = #u_no#
+	</select>
+	
+	<select id = "everyCommSelect" resultClass = "CommVO">
+		SELECT c_no ,u_no,TO_CHAR(c_date,'YYYY-mm-DD') c_date,
+			   TO_CHAR(W_INCEN,'FM9,999,999') W_INCEN, TO_CHAR(N_INCEN,'FM9,999,999') N_INCEN,
+			   TO_CHAR(INCEN ,'FM9,999,999')INCEN, TO_CHAR(TOTAL,'FM9,999,999') TOTAL,
+			   TO_CHAR(DEDUCTION,'FM9,999,999') DEDUCTION, TO_CHAR(ACTUAL,'FM9,999,999') ACTUAL,
+			   NAME
+		FROM a_comm
+	</select>
+	
+	<select id ="scheduleSelect" resultClass ="ScheduleVO">
+		SELECT b.name name, b.pos pos, a.u_no,TO_CHAR(w_date,'YYYY-mm-DD') W_DATE,
+			    NVL(TO_char(intime,'YYYY-mm-DD HH24:MI'),0) INTIME ,
+			    NVL(TO_CHAR(outtime,'YYYY-mm-DD HH24:MI'),0) OUTTIME ,
+			    NVL((TO_CHAR(OUTTIME, 'HH24') - TO_CHAR(INTIME, 'HH24')), 0) TOTAL
+		FROM a_schedule a, a_user b
+		WHERE a.u_no = b.u_no
+	</select>
+	<select id ="scheduleSelect2" resultClass ="ScheduleVO">
+		SELECT b.name name, b.pos pos, a.u_no,TO_CHAR(w_date,'YYYY-mm-DD') W_DATE,
+			    NVL(TO_char(intime,'YYYY-mm-DD HH24:MI'),0) INTIME ,
+			    NVL(TO_CHAR(outtime,'YYYY-mm-DD HH24:MI'),0) OUTTIME ,
+			    NVL((TO_CHAR(OUTTIME, 'HH24') - TO_CHAR(INTIME, 'HH24')), 0) TOTAL
+		FROM a_schedule a, a_user b
+		WHERE a.u_no = b.u_no
+		 AND pos = '알바'
+	</select>
+	
+	<select id ="rangeSelect" parameterClass = "map" resultClass ="ScheduleVO">
+		SELECT u_no,TO_CHAR(w_date,'YYYY-mm-DD') W_DATE,
+			    NVL(TO_char(intime,'YYYY-mm-DD HH24:MI'),0) INTIME ,
+			    NVL(TO_CHAR(outtime,'YYYY-mm-DD HH24:MI'),0) OUTTIME ,
+			    NVL((TO_CHAR(OUTTIME, 'HH24') - TO_CHAR(INTIME, 'HH24')), 0) TOTAL
+		FROM a_schedule
+		WHERE w_date between #start# and #end#
+	</select>
+	
+	<select id ="rangeSelect2" parameterClass = "map" resultClass ="ScheduleVO">
+		SELECT u_no,TO_CHAR(w_date,'YYYY-mm-DD') W_DATE,
+			    NVL(TO_char(intime,'YYYY-mm-DD HH24:MI'),0) INTIME ,
+			    NVL(TO_CHAR(outtime,'YYYY-mm-DD HH24:MI'),0) OUTTIME ,
+			    NVL((TO_CHAR(OUTTIME, 'HH24') - TO_CHAR(INTIME, 'HH24')), 0) TOTAL
+		FROM a_schedule
+		WHERE w_date between #start# and #end#
+		 AND pos = '알바'
+	</select>
+	
+	<select id="getComm" parameterClass="int" resultClass="CommVO">
+		SELECT c_no ,u_no,TO_CHAR(c_date,'YYYY-mm-DD') c_date,
+			   TO_CHAR(W_INCEN,'FM9,999,999') W_INCEN, TO_CHAR(N_INCEN,'FM9,999,999') N_INCEN,
+			   TO_CHAR(INCEN ,'FM9,999,999')INCEN, TO_CHAR(TOTAL,'FM9,999,999') TOTAL,
+			   TO_CHAR(DEDUCTION,'FM9,999,999') DEDUCTION, TO_CHAR(ACTUAL,'FM9,999,999') ACTUAL,
+			   NAME
+		FROM a_comm
+		WHERE u_no = #u_no#
+	</select>
+	
+	<update id="burgerUpdate" parameterClass="ProductVO">
+		UPDATE a_product SET cost = #cost#, p_description = #p_description#, gb_view = #gb_view# WHERE num = #num#
+	</update>
+	
+	<insert id = "InsertBuger" parameterClass="ProductVO">
+      INSERT INTO a_product(num,
+                       name,
+                       cla,
+                       cost,
+                       img,
+                       p_description,
+                       gb_view
+                     )
+                  VALUES(
+                     #num#,
+                     #name#,
+                     #cla#,
+                     #cost#,
+                     #img#,
+                     #p_description#,
+                     'Y'
+                  )
+   </insert>
+   
+   <delete id="deleteMenu" parameterClass="String">
+   		DELETE a_product WHERE num = #num#
+   </delete>
+   
+</sqlMap>

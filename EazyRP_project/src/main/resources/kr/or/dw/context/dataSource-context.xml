@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:c="http://www.springframework.org/schema/c"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:mybatis-spring="http://mybatis.org/schema/mybatis-spring"
+	xsi:schemaLocation="http://mybatis.org/schema/mybatis-spring http://mybatis.org/schema/mybatis-spring-1.2.xsd 
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd 
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/spring-context-4.3.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-4.0.xsd">
+	
+	
+	<bean id="dataSource" class="org.apache.commons.dbcp2.BasicDataSource"
+		  p:driverClassName="${jdbc.driverClassName}"
+		  p:url="${jdbc.url}"
+		  p:username="${jdbc.username}"
+		  p:password="${jdbc.password}"
+	/>
+	
+
+	<bean id="dataSourceSpied" class="net.sf.log4jdbc.Log4jdbcProxyDataSource">
+		<constructor-arg ref="dataSource" />
+		<property name="logFormatter">
+			<bean class="net.sf.log4jdbc.tools.Log4JdbcCustomFormatter">
+				<property name="loggingType" value="MULTI_LINE"/>
+				<property name="sqlPrefix" value="SQL:::"/>
+			</bean>
+		</property>
+	</bean>
+	
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager"
+		  p:dataSource-ref="dataSourceSpied"
+	/>
+	
+	<tx:annotation-driven transaction-manager="transactionManager"/>
+	
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean"
+		  p:dataSource-ref="dataSourceSpied"
+		  p:configLocation="classpath:kr/or/dw/mybatis/sqlConfig/sqlConfig.xml"
+		  p:mapperLocations="classpath:kr/or/dw/mybatis/mappers/*-Mapper.xml"
+	/>
+	
+			   	   <!-- 이메일 인증 관련 빈 등록 -->
+<!-- 	<bean id="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl"> -->
+<!--     <property name="host" value="smtp.gmail.com" /> -->
+<!--     <property name="port" value="587" /> -->
+<!--     <property name="username" value="olo56576044@gmail.com" /> -->
+<!--     <property name="password" value="qbksnrctiwklfjmi" /> -->
+<!--     <property name="javaMailProperties"> -->
+<!--     	 <props> -->
+<!--             	<prop key="mail.smtp.starttls.enable">true</prop> -->
+<!-- 				<prop key="mail.smtp.auth">true	</prop> -->
+<!-- 				<prop key="mail.transport.protocol">smtp</prop> -->
+<!-- 				<prop key="mail.debug">true</prop> -->
+<!-- 				<prop key="mail.smtp.ssl.trust">smtp.gmail.com</prop> -->
+<!-- 				<prop key="mail.smtp.ssl.protocols">TLSv1.2</prop> -->
+<!--             </props> -->
+<!--     </property> -->
+<!--  	</bean> -->
+
+	
+	<!-- <bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate"
+		  c:sqlSessionFactory-ref="sqlSessionFactory"
+	/> -->
+	
+	<mybatis-spring:scan base-package="kr.or.dw" annotation="org.apache.ibatis.annotations.Mapper"/>
+	
+</beans>

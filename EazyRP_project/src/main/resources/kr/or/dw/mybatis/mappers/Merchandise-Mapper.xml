@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.MerchandiseDAO">
+	
+	<sql id="search">
+		<if test="searchType == 'd'.toString()">
+			AND sp.sp_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 't'.toString()">
+			AND s_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			sp.sp_no LIKE '%' || #{keyword} || '%'
+			OR
+			s_name LIKE '%' || #{keyword} || '%'
+			OR
+			pr_name LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<!-- 셀렉트할때는 리절트타입 필요하고 insert delete 등할때는 파라미터 타입이 들어감 -->
+	<select id="selectMerchandiseList" resultType="Map">
+		SELECT  sp.sp_no,
+				s_name,
+				sp.s_no,
+				sp.pr_no,
+				pr_name,
+				sp_q,
+				price,
+				status,
+				startperiod,
+				endperiod,
+				unitprice
+		  FROM shop_pr sp, product p, shop s
+		 WHERE sp.s_no = s.s_no
+		   AND sp.pr_no = p.pr_no
+		   AND sp.enabled = '1'
+		 <include refid="search"/>
+		 ORDER BY sp.sp_no
+	</select>
+	
+	<select id="selectMerchandiseListCount" resultType="int">
+		SELECT COUNT(*)
+		 FROM shop_pr sp, product p, shop s
+		 WHERE sp.s_no = s.s_no
+		   AND sp.pr_no = p.pr_no
+		 <include refid="search"/>
+	</select>
+	
+	<insert id="insertMerchandise" parameterType="merchandise">
+	
+		<selectKey keyProperty="sp_no" order="BEFORE" resultType="java.lang.String">
+				SELECT ('SP_PR_') || CASE 
+					WHEN LENGTH(shop_pr_seq.nextval) = 1
+					THEN '00' || shop_pr_seq.nextval
+					WHEN LENGTH(shop_pr_seq.nextval) = 2
+					THEN '0' || shop_pr_seq.nextval
+					ELSE '' || shop_pr_seq.nextval
+		   	    	END SP_NO
+			   FROM dual
+		</selectKey>
+		INSERT INTO shop_pr (
+			sp_no,
+			s_no,
+			pr_no,
+			sp_q,
+			price,
+			status,
+			startperiod,
+			endperiod,
+			sys_reg,
+			sys_up,
+			sys_regdate,
+			sys_updatedate,
+			enabled,
+			unitprice
+			)
+		VALUES(
+			#{sp_no},
+			#{s_no},
+			#{pr_no},
+			#{sp_q},
+			#{price},
+			#{status},
+			#{startperiod, jdbcType = DATE},
+			#{endperiod, jdbcType = DATE},
+			#{sys_reg},
+			#{sys_up},
+			sysdate,
+			sysdate,
+			'1',
+			#{unitprice}
+		)
+	</insert>
+	
+	<select id="selectDetail" resultType="Map">
+		SELECT  sp.sp_no,
+				s_name,
+				sp.s_no,
+				sp.pr_no,
+				pr_name,
+				sp_q,
+				price,
+				status,
+				startperiod,
+				endperiod,
+				unitprice
+		  FROM shop_pr sp, product p, shop s
+		 WHERE sp.s_no = s.s_no
+		   AND sp.pr_no = p.pr_no
+		   AND sp.sp_no = #{sp_no}
+	</select>
+	
+	<update id="modifyMerchandise" parameterType="merchandise">
+		UPDATE shop_pr SET s_no		=	#{s_no},
+						   pr_no 		=	#{pr_no},
+						    sp_q 		=	#{sp_q},
+							price 		=	#{price},
+							status		=	#{status},
+							startperiod	=	#{startperiod, jdbcType = DATE},
+							endperiod 	=	#{endperiod, jdbcType = DATE},
+							sys_updatedate = sysdate,
+							unitprice	=	#{unitprice}
+				WHERE sp_no = #{sp_no}
+	</update>
+	
+	<update id="deleteMerchandise" parameterType="merchandise">
+		UPDATE shop_pr SET enabled = '0',
+				sys_updatedate = sysdate
+			WHERE sp_no = #{sp_no}
+	</update>
+	
+	<delete id="deleteShopMerchandise" parameterType="str">
+		DELETE FROM shop_pr WHERE s_no = #{s_no}
+	</delete>
+	
+	<select id="getMerchandiseList" resultType="Map">
+		SELECT sp.sp_no, sp.sp_q, sp.price, p.pr_name, sh.s_name, sp.unitprice
+		  FROM shop_pr sp, product p, shop sh  
+		 WHERE sp.pr_no = p.pr_no
+		   AND sp.s_no = sh.s_no
+		   AND sp.status = '판매중'
+	  ORDER BY sp.sp_no 
+	</select>
+
+	<select id="getMerchandise" resultType="Map">
+		SELECT sp.sp_no, sp.sp_q, sp.price, p.pr_name, sh.s_name, sp.unitprice
+		  FROM shop_pr sp, product p, shop sh  
+		 WHERE sp.pr_no = p.pr_no
+		   AND sp.s_no = sh.s_no
+		   AND sp.status = '판매중'
+		<if test="searchType == 'w'.toString()">
+			AND sp.sp_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND sh.s_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'd'.toString()">
+			AND p.pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cwd'.toString()">
+			AND (sp.sp_no LIKE '%' || #{keyword} || '%'
+			OR sh.s_name LIKE '%' || #{keyword} || '%'
+			OR p.pr_name LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY sp.sp_no
+	</select>
+</mapper>

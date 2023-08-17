@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.ProcessDAO">
+	
+	<sql id="makeProcessNoSeq">
+		SELECT ('PC_') || CASE 
+							WHEN LENGTH(pc_code_seq.nextval) = 1
+							THEN '00' || pc_code_seq.nextval
+							WHEN LENGTH(pc_code_seq.nextval) = 2
+							THEN '0' || pc_code_seq.nextval
+							ELSE '' || pc_code_seq.nextval
+				   	      END PC_CODE
+		  FROM dual
+	</sql>
+	
+	<insert id="insertProcess" parameterType="process">
+		<selectKey keyProperty="pc_code" order="BEFORE" resultType="java.lang.String">
+			<include refid="makeProcessNoSeq"/>
+		</selectKey>
+		INSERT INTO process (
+			pc_code, 
+			pc_name, 
+			pc_order, 
+			pc_content
+		) 
+		VALUES (
+			#{pc_code},
+			#{pc_name},
+			#{pc_order},
+			#{pc_content}
+		)
+	</insert>
+	
+	<sql id="search">
+		<if test="searchType == 'c'.toString()">
+			AND pc_code LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 't'.toString()">
+			AND pc_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'o'.toString()">
+			AND pc_order LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cto'.toString()">
+			AND (
+			pc_code LIKE '%' || #{keyword} || '%'
+			OR
+			pc_name LIKE '%' || #{keyword} || '%'
+			OR
+			pc_order LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<!-- 셀렉트할때는 리절트타입 필요하고 insert delete 등할때는 파라미터 타입이 들어감 -->
+	<select id="selectSearchProcessList" resultType="process">
+		SELECT 	*
+		  FROM 	process
+		 WHERE 	1=1
+		 AND	enabled = 'y'
+		 <include refid="search"/>
+		 ORDER BY pc_code desc
+	</select>
+	
+	<select id="selectSearchProcessListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM process
+		 WHERE 1=1
+		 <include refid="search"/>
+	</select>
+	
+	<select id="selectProcess" resultType="process">
+		SELECT 	*
+		FROM	process
+		WHERE	pc_code = #{pc_code}
+	</select>
+	
+	<update id="deleteProcess" parameterType="str">
+		UPDATE	process
+		SET		enabled = 'n'
+		WHERE	pc_code = #{pc_code}
+	</update>
+	
+	<update id="updateProcess" parameterType="process">
+		UPDATE process
+		SET pc_name = #{pc_name}
+			,pc_order = #{pc_order}
+			,pc_content = #{pc_content}
+		WHERE pc_code = #{pc_code}
+	</update>
+</mapper>

@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.OrderDAO">
+	
+	<sql id="search">
+		<if test="searchType == 'd'.toString()">
+			AND sp.sp_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 't'.toString()">
+			AND s_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'w'.toString()">
+			AND pr_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'all'.toString()">
+			AND (
+			sp.sp_no LIKE '%' || #{keyword} || '%'
+			OR
+			s_name LIKE '%' || #{keyword} || '%'
+			OR
+			pr_name LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<!-- 셀렉트할때는 리절트타입 필요하고 insert delete 등할때는 파라미터 타입이 들어감 -->
+	<select id="selectOrderList" resultType="Map">
+		SELECT so.*, p.PR_NAME pr_name 
+		  FROM s_order so, SHOP_PR sp, PRODUCT p, shop s 
+		 WHERE so.SP_NO = sp.SP_NO
+		   AND p.PR_NO = sp.PR_NO
+		   AND s.s_no = sp.s_no
+		<include refid="search"/>
+		ORDER BY so.so_no
+	</select>
+	
+	<select id="selectOrderListCount" resultType="int">
+		SELECT COUNT(*)
+		  FROM s_order so, SHOP_PR sp, PRODUCT p, shop s  
+		 WHERE so.SP_NO = sp.SP_NO
+		   AND p.PR_NO = sp.PR_NO
+		   AND s.s_no = sp.s_no 
+		 <include refid="search"/>
+	</select>
+	
+	<insert id="insertOrder" parameterType="order">
+	
+		<selectKey keyProperty="so_no" order="BEFORE" resultType="java.lang.String">
+				SELECT ('SO_') || CASE 
+					WHEN LENGTH(s_order_seq.nextval) = 1
+					THEN '00' || s_order_seq.nextval
+					WHEN LENGTH(s_order_seq.nextval) = 2
+					THEN '0' || s_order_seq.nextval
+					ELSE '' || s_order_seq.nextval
+		   	    	END SO_NO
+			   FROM dual
+		</selectKey>
+		INSERT INTO S_ORDER (
+			so_no,
+			sp_no,
+			reciever,
+			tel,
+			addr,
+			quantity,
+			orderdate,
+			method,
+			request,
+			invoice,
+			delfee,
+			delstartdate,
+			delenddate,
+			failure,
+			progress,
+<!-- 			gb, -->
+			enabled,
+			sys_up,
+			sys_regdate,
+			sys_updatedate,
+			sys_reg
+			)
+		VALUES(
+			#{so_no},
+			#{sp_no},
+			#{reciever},
+			#{tel},
+			#{addr},
+			#{quantity},
+			#{orderdate},
+			#{method},
+			#{request},
+			#{invoice},
+			#{delfee},
+			#{delstartdate, jdbcType = DATE},
+			#{delenddate, jdbcType = DATE},
+			#{failure},
+			#{progress},
+<!-- 			#{gb}, -->
+			'1',
+			#{sys_up},
+			sysdate,
+			sysdate,
+			#{sys_reg}
+		)
+	</insert>
+		
+	<update id="minusQuantity">
+		UPDATE shop_pr SET sp_q = sp_q<![CDATA[-]]>#{quantity}
+		 WHERE sp_no = #{sp_no}
+	</update>	
+		
+	<select id="selectDetail" resultType="Map">
+		SELECT so.*, p.PR_NAME pr_name 
+		  FROM s_order so, SHOP_PR sp, PRODUCT p  
+		 WHERE so.SO_NO = #{so_no} 
+		   AND so.SP_NO = sp.SP_NO
+		   AND p.PR_NO = sp.PR_NO 
+	</select>
+	
+	<update id="modifyOrder" parameterType="order">
+		UPDATE s_order SET so_no = #{so_no},
+						   sp_no = #{sp_no},
+						   reciever = #{reciever},
+						   tel = #{tel},
+						   addr = #{addr},
+						   quantity = #{quantity},
+						   orderdate = #{orderdate},
+						   method = #{method},
+						   request = #{request},
+						   invoice = #{invoice},
+						   delfee = #{delfee},
+						   delstartdate = #{delstartdate, jdbcType = DATE},
+						   delenddate = #{delenddate, jdbcType = DATE},
+						   failure = #{failure},
+						   progress = #{progress},
+						   enabled = '1',
+						   sys_up = #{sys_up},
+						   sys_updatedate = sysdate
+					WHERE so_no = #{so_no}
+	</update>
+	
+	<update id="plusQuantity">
+		UPDATE shop_pr SET sp_q = sp_q<![CDATA[+]]>#{quantity}
+		 WHERE sp_no = #{sp_no}
+	</update>	
+	
+	<insert id="trHistory" parameterType="Map">
+		INSERT INTO tr_history VALUES(
+			'TH_' || LPAD(th_no_seq.nextval, 4, '0'),
+			sysdate,
+			sysdate,
+			#{c_no},
+			#{emp_no},
+			'FC_003',
+			#{amount},
+			#{so_no},
+			's',
+			'Y',
+			'/erp5/orderDetail.do?so_no=' || #{so_no},
+			#{quantity},
+			'',
+			'AC_001',
+			'T_001',
+			'',
+			'',
+			(SELECT e_name FROM emp WHERE emp_no = #{emp_no}),
+			#{price},
+			#{unitprice}
+		)
+	</insert>
+	
+	<select id="getUnitprice" resultType="int">
+		SELECT unitprice FROM shop_pr WHERE sp_no = #{sp_no}
+	</select>
+	
+	<select id="getPrice" resultType="int">
+		SELECT price FROM shop_pr WHERE sp_no = #{sp_no}
+	</select>
+	
+</mapper>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration
+	PUBLIC "-//mybatis.org//DTD Config 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-config.dtd">
+<configuration>
+
+
+	<!-- 마이바티스 null값 insert 설정 --> 
+	<settings>
+<!-- 		<setting name="jdbcTypeForNull" value="null"/>  -->
+	    <setting name="callSettersOnNulls" value="true"/>
+	    <setting name="returnInstanceForEmptyRow" value="true"/>
+	</settings>
+	
+	<typeAliases>
+		<typeAlias type="java.lang.String" alias="str"/>
+		<typeAlias type="java.lang.Integer" alias="int"/>
+		<typeAlias type="kr.or.dw.vo.MenuVO" alias="menu"/>
+		<typeAlias type="kr.or.dw.vo.EmpVO" alias="emp"/>
+		<typeAlias type="kr.or.dw.vo.NoteVO" alias="note"/>
+		<typeAlias type="kr.or.dw.vo.EstimateVO" alias="estimate"/>
+		<typeAlias type="kr.or.dw.vo.SiVO" alias="si"/>
+		<typeAlias type="kr.or.dw.vo.MemberVO" alias="member"/>
+		<typeAlias type="kr.or.dw.vo.ProductVO" alias="product"/>
+		<typeAlias type="kr.or.dw.vo.WareHouseVO" alias="warehouse"/>
+		<typeAlias type="kr.or.dw.vo.DraftVO" alias="draft"/>
+		<typeAlias type="kr.or.dw.vo.PlVO" alias="pl"/>
+		<typeAlias type="kr.or.dw.vo.MerchandiseVO" alias="merchandise"/>
+		<typeAlias type="kr.or.dw.vo.DraftGbVO" alias="draftGb"/>
+		<typeAlias type="kr.or.dw.vo.ShopVO" alias="shop"/>
+		<typeAlias type="kr.or.dw.vo.CompanyVO" alias="company"/>
+		<typeAlias type="kr.or.dw.vo.OrderVO" alias="order"/>
+		<typeAlias type="kr.or.dw.vo.Order2VO" alias="order2"/>
+		<typeAlias type="kr.or.dw.vo.O_DetailVO" alias="o_detail"/>
+		<typeAlias type="kr.or.dw.vo.Pro_whVO" alias="pro_wh"/>
+		<typeAlias type="kr.or.dw.vo.InquiryVO" alias="inquiry"/>
+		<typeAlias type="kr.or.dw.vo.SpriceVO" alias="sprice"/>
+		<typeAlias type="kr.or.dw.vo.ExtrapayVO" alias="extrapay"/>
+		<typeAlias type="kr.or.dw.vo.DeductionVO" alias="deduction"/>
+		<typeAlias type="kr.or.dw.vo.WorkVO" alias="work"/>
+		<typeAlias type="kr.or.dw.vo.SalVO" alias="sal"/>
+		<typeAlias type="kr.or.dw.vo.SalDetailVO" alias="saldetail"/>
+		<typeAlias type="kr.or.dw.vo.PaVO" alias="pa"/>
+
+		<typeAlias type="kr.or.dw.vo.SsheetVO" alias="ssheet"/>
+		<typeAlias type="kr.or.dw.vo.SaleDetailVO" alias="saleDetail"/>
+
+		<typeAlias type="kr.or.dw.vo.ProfitLossVO" alias="profitLoss"/>
+		<typeAlias type="kr.or.dw.vo.Tr_historyVO" alias="tr_history"/>
+		<typeAlias type="kr.or.dw.vo.DeptVO" alias="dept"/>
+		<typeAlias type="kr.or.dw.vo.MyMenuVO" alias="myMenu"/>
+		<typeAlias type="kr.or.dw.vo.QualityVO" alias="ql"/>
+
+		<typeAlias type="kr.or.dw.vo.AsVO" alias="as"/>
+		<typeAlias type="kr.or.dw.vo.ErrorVO" alias="error"/>
+		
+		<!-- 희성이꼬 --><!-- 즐, 똥, 엿--><!-- 맛있겠다 -->
+		<typeAlias type="kr.or.dw.vo.BsheetVO" alias="bsheet"/>
+		<typeAlias type="kr.or.dw.vo.BuyDetailVO" alias="buyDetail"/>
+		<typeAlias type="kr.or.dw.vo.CalendarVO" alias="calendar"/>
+		<typeAlias type="kr.or.dw.vo.ProcessVO" alias="process"/>
+		<typeAlias type="kr.or.dw.vo.WhVO" alias="wh"/>
+		<typeAlias type="kr.or.dw.vo.FactoryVO" alias="factory"/>
+		<typeAlias type="kr.or.dw.vo.WorkOrderVO" alias="workOrder"/>
+		<typeAlias type="kr.or.dw.vo.WhTransferVO" alias="whTransfer"/>
+		
+	</typeAliases>
+
+</configuration>

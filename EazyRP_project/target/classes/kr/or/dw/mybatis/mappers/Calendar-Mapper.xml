@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.CalendarDAO">
+
+	<resultMap id="calendarRM" type="Calendar">
+		<id property="calendar_no" column="CALENDAR_NO" />
+		<result property="calendar_title" column="CALENDAR_TITLE" />
+		<result property="calendar_start" column="CALENDAR_START" />
+		<result property="calendar_end" column="CALENDAR_END" />
+	</resultMap>
+	
+	<select id="getCalendar" resultMap="calendarRM">
+		select * from calendar 
+	</select>
+	
+	<insert id="insertCalendar" parameterType="calendar">
+		INSERT INTO calendar
+					(calendar_no, calendar_title, calendar_start, calendar_end)
+			VALUES(pc_no_seq.nextVal, #{calendar_title}, TO_DATE(#{calendar_start}, 'yyyy-MM-dd HH24:MI:SS'), TO_DATE(#{calendar_end}, 'yyyy-MM-dd HH24:MI:SS'))
+	</insert>
+	
+	<update id="updateCalendar" parameterType="calendar">
+		UPDATE	calendar
+		SET		calendar_title 	= #{calendar_title},
+				calendar_start	= TO_DATE(#{calendar_start}, 'yyyy-MM-dd HH24:MI:SS'),
+				calendar_end	= TO_DATE(#{calendar_end}, 'yyyy-MM-dd HH24:MI:SS')
+		WHERE	calendar_no		= #{calendar_no}
+	</update>
+	
+	<delete id="deleteCalendar" parameterType="calendar">
+		DELETE 
+		FROM	calendar
+		WHERE	calendar_no	= #{calendar_no}
+	</delete>
+	
+	
+	
+</mapper>

@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.MenuDAO">
+	
+	<select id="selectMainMenuList" resultType="menu">
+		SELECT *
+		  FROM menu
+		 WHERE mcode LIKE '%' || '0000'
+		   AND mcode != 'M000000'
+		 ORDER BY mcode ASC
+	</select>
+	
+	<select id="selectSubMenuList" parameterType="str" resultType="menu">
+		SELECT *
+		  FROM menu
+		 WHERE upcode = #{mcode}
+		   AND isnav = 1
+		 ORDER BY mcode ASC
+	</select>
+	<select id="getURL" resultType="str">
+		SELECT murl FROM menu WHERE mcode = #{mcode}
+	</select>
+	
+	<select id="getE_name" resultType="str">
+		SELECT e_name FROM emp WHERE c_no = #{selectedC_no} ORDER BY e_name
+	</select>	
+	
+	<select id="getEmp_no" resultType="str">
+		SELECT emp_no FROM emp WHERE c_no = #{selectedC_no} ORDER BY e_name
+	</select>
+	
+	<select id="selectEname" resultType="str">
+		SELECT e_name FROM emp WHERE emp_no = #{selectedEmp}
+	</select>
+	
+	<select id="getPayment" resultType="draft">
+		SELECT ROWNUM, d.*, e.e_name e_name
+		FROM draft d, emp e
+		WHERE d.emp_no = e.emp_no
+		  AND d.emp_no = #{emp_no}
+		  ORDER BY d.DR_NO DESC
+	</select>
+	
+	<select id="getAmount" resultType="int">
+	    <![CDATA[
+	    SELECT SUM(AMOUNT) AS amount
+	    FROM TR_HISTORY
+	    WHERE SYS_REGDATE >= TO_DATE(#{month} || '-01', 'YYYY-MM-DD')
+	      AND SYS_REGDATE < ADD_MONTHS(TO_DATE(#{month} || '-01', 'YYYY-MM-DD'), 1)
+	    ]]>
+	</select>
+	
+</mapper>

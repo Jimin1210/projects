@@ -1,0 +1,272 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.WhTransferDAO">
+
+	<sql id="search">
+		<if test="cri.searchType == 's'.toString()">
+			AND wht.SYS_REGDATE LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'c'.toString()">
+			AND wht.WT_NO LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'n'.toString()">
+			AND (wa.WH_NAME LIKE '%' || #{cri.keyword} || '%'
+			OR wa2.WH_NAME LIKE '%' || #{cri.keyword} || '%')
+		</if>
+		<if test="cri.searchType == 'scn'.toString()">
+			AND (
+			wht.SYS_REGDATE LIKE '%' || #{cri.keyword} || '%'
+			OR
+			wht.WT_NO LIKE '%' || #{cri.keyword} || '%'
+			OR
+			wa.WH_NAME LIKE '%' || #{cri.keyword} || '%'
+			OR
+			wa2.WH_NAME LIKE '%' || #{cri.keyword} || '%'
+			)
+		</if>
+	</sql>
+	
+	<select id="selectSearchWhTransferList" resultType="Map">
+		SELECT 	wht.wt_no,
+				MAX(TO_CHAR(wht.sys_regdate, 'yyyy-MM-dd')) sys_regdate,
+				count(whtd.PR_NO) pr_no,
+				CASE WHEN count(whtd.PR_NO) <![CDATA[ > ]]> 1
+					THEN MAX((SELECT pr_name FROM product WHERE pr_no = whtd.pr_no)) || ' 외 ' || (count(whtd.PR_NO)-1) || '건'
+					ELSE MAX((SELECT pr_name FROM product WHERE pr_no = whtd.pr_no))
+				END pr_names,
+				MAX((SELECT pr_name FROM product WHERE pr_no = whtd.pr_no)) pr_name, 
+				MAX((SELECT wh_name FROM warehouse WHERE wh_no = wht.wh_no)) wh_name,
+				MAX((SELECT wh_name FROM warehouse WHERE wh_no = wht.wh_no2)) wh_name2,
+				MAX(wht.total_quantity) total_quantity,
+				MAX(wht.progress) progress
+		FROM WHTRANSFER wht, wht_detail whtd, product pr, warehouse wa, warehouse wa2
+		WHERE 1=1
+		AND wht.wt_no = whtd.wt_no
+		AND whtd.pr_no = pr.pr_no
+		AND pr.wh_no = wa.wh_no
+		AND wht.wh_no = wa.wh_no
+		AND wht.wh_no2 = wa2.wh_no
+		AND wht.c_no = #{c_no}
+		<include refid="search"></include>
+		GROUP BY wht.wt_no
+		ORDER BY sys_regdate desc
+	</select>
+	
+	<select id="selectSearchWhTransferListCount" resultType="int">
+		SELECT 	COUNT(*)
+		FROM(	SELECT	COUNT(*)
+				FROM	WHTRANSFER wht, 
+						wht_detail whtd, 
+						product pr, 
+						warehouse wa, 
+						warehouse wa2
+				WHERE	1=1
+				AND wht.wt_no = whtd.wt_no
+				AND whtd.pr_no = pr.pr_no
+				AND pr.wh_no = wa.wh_no
+				AND wht.wh_no = wa.wh_no
+				AND wht.wh_no2 = wa2.wh_no
+				AND wht.c_no = #{c_no}
+				<include refid="search"></include>
+				GROUP BY wht.wt_no
+		)
+	</select>
+	
+	<!-- 보내는 창고의 재고 조회 -->
+	<select id="whtSelectWareHouseList" resultType="Map">
+		SELECT	*
+		FROM	product
+		WHERE	1=1
+		AND		wh_no = #{wh_no}
+		AND		c_no = #{c_no}
+		<include refid="search"></include>
+		ORDER BY pr_no desc
+	</select>
+	
+	<select id="whtSelectWareHouseListCount" resultType="int">
+		SELECT 	COUNT(*)
+		FROM	product
+		WHERE	1=1
+		AND		wh_no = #{wh_no}
+		AND		c_no = #{c_no}
+		<include refid="search"></include>
+	</select>
+	<!-- ㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡㅡ -->
+	
+	<sql id="makeWtNoSeq">
+		SELECT ('WT_') || CASE 
+			WHEN LENGTH(wt_no_seq.nextval) = 1
+			THEN '00' || wt_no_seq.nextval
+			WHEN LENGTH(wt_no_seq.nextval) = 2
+			THEN '0' || wt_no_seq.nextval
+			ELSE '' || wt_no_seq.nextval
+			END WT_NO
+		FROM dual
+	</sql>
+	
+	<insert id="registWhTransfer" parameterType="whTransfer">
+		<selectKey keyProperty="wt_no" order="BEFORE" resultType="java.lang.String">
+			<include refid="makeWtNoSeq"></include>
+		</selectKey>
+		INSERT INTO whtransfer(
+			wt_no,
+			wh_no2,
+			wh_no,
+			total_quantity,
+			emp_no,
+			progress,
+			sys_up,
+			sys_regdate,
+			sys_updatedate,
+			c_no
+		)
+		VALUES(
+			#{wt_no},
+			#{wh_no2},
+			#{wh_no},
+			#{total_quantity},
+			#{emp_no},
+			2,
+			#{emp_no},
+			sysdate,
+			sysdate,
+			#{c_no}
+		)
+	</insert>
+	
+	<insert id="registWhTransferDetail" parameterType="whTransfer">
+		INSERT INTO wht_detail (
+			wht_detail_no,
+			wt_no,
+			pr_no,
+			quantity
+		)	
+		VALUES (
+			wht_detail_no_seq.nextval,
+			#{wt_no},
+			#{pr_no},
+			#{quantity}
+		)
+	</insert>
+	
+	<update id="registProduct" parameterType="whTransfer">
+		MERGE INTO product tgt
+		USING(  	
+				SELECT	#{pr_name} pr_name,
+			        	#{wh_no2} wh_no,
+			        	#{quantity} quantity,
+			        	#{c_no} c_no
+			    FROM 	dual
+		) src
+		ON(	
+				tgt.pr_name = src.pr_name 
+			AND tgt.wh_no = src.wh_no
+		)
+		WHEN MATCHED THEN
+		    UPDATE SET tgt.quantity = tgt.quantity + src.quantity
+		WHEN NOT MATCHED THEN
+		    INSERT (
+		        pr_no, 
+		        pr_name, 
+		        c_no, 
+		        pr_gr, 
+		        pr_st, 
+		        pr_inprice, 
+		        pr_exprice, 
+		        pr_class, 
+		        img,
+		        exdate, 
+		        sp_no, 
+		        sys_up, 
+		        sys_regdate, 
+		        sys_updatedate, 
+		        sys_reg, 
+		        quantity, 
+		        wh_no, 
+		        enabled
+		    )
+		    VALUES (
+		        'PR_' || LPAD(product_seq.nextval, 3, '0'), 
+		        src.pr_name, 
+		        src.c_no,
+		        (SELECT MAX(pr_gr) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+		        (SELECT MAX(pr_st) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+		        (SELECT MAX(pr_inprice) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+		        (SELECT MAX(pr_exprice) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+		        (SELECT MAX(pr_class) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+		        '', 
+		        sysdate, 
+		        'SP_001', 
+		        0, 
+		        sysdate, 
+		        sysdate, 
+		        0, 
+		        src.quantity, 
+		        src.wh_no, 
+		        'Y'
+		    )
+	</update>
+	
+	<update id="minusProduct" parameterType="whTransfer">
+		UPDATE 	product SET quantity = quantity - #{quantity}
+		WHERE	pr_no = #{pr_no}
+	</update>
+	
+	<select id="selectWhTransfer" parameterType="str" resultType="Map">
+		SELECT	wht.wt_no,
+				TO_CHAR(wht.SYS_REGDATE, 'yyyy-MM-dd') sys_regdate,
+				com.c_name,
+				emp.e_name,
+				wa.wh_name wh_name,
+				wa2.wh_name wh_name2,
+				wa.wh_no wh_no,
+				wa2.wh_no wh_no2,
+				wht.progress
+		FROM	whtransfer wht, emp emp, company com, warehouse wa, warehouse wa2
+		WHERE	wht.c_no = com.c_no
+		AND		wht.emp_no = emp.emp_no
+		AND		wht.wh_no = wa.wh_no
+		AND		wht.wh_no2 = wa2.wh_no
+		AND		wht.wt_no = #{wt_no}
+	</select>
+	
+	<select id="selectWhTransferDetail" resultType="Map">
+		SELECT	whtd.*, 
+				pr.pr_name,
+				ROWNUM
+		FROM	wht_detail whtd, product pr, whtransfer wht
+		WHERE	whtd.wt_no = wht.wt_no
+		AND		whtd.pr_no = pr.pr_no
+		AND		wht.wt_no = #{wt_no}
+	</select>
+	
+	<select id="getAmount" resultType="int">
+		SELECT p.pr_inprice FROM product p WHERE p.pr_no = #{pr_no}
+	</select>
+
+	<insert id="insertTr_history">
+		INSERT INTO tr_history VALUES(
+			'TH_' || LPAD(th_no_seq.nextval, 4, '0'),
+			sysdate,
+			sysdate,
+			#{wht.c_no},
+			1,
+			'FC_003',
+			#{amount},
+			'X',
+			'w',
+			'Y',
+			'/erp4/whtransfer/detail.do?wt_no=' || #{wt_no},
+			#{quantity},
+			'',
+			'AC_001',
+			'T_001',
+			'',
+			'',
+			'추가',
+			'',
+			#{amount}
+		)
+	</insert>
+
+</mapper>

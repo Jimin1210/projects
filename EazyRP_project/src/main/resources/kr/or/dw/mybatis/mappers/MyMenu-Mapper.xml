@@ -1,0 +1,297 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.MyMenuDAO">
+	
+	<select id="getEmpList" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE e.c_no = c.c_no
+		ORDER BY e.e_name
+	</select>
+	
+	<select id="getSelectEmpList" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE e_name LIKE '%' || #{name} || '%' AND e.c_no = c.c_no
+		ORDER BY e.e_name
+	</select>
+	
+	<select id="getSelectEmpListCno" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE c_name LIKE '%' || #{c_name} || '%' AND e.c_no = c.c_no
+		ORDER BY e.e_name
+	</select>
+	
+	<select id="getEmp" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE e.c_no = c.c_no
+		<if test="searchType == 'w'.toString()">
+			AND e.e_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'c'.toString()">
+			AND c.c_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'cw'.toString()">
+			AND (e.e_name LIKE '%' || #{keyword} || '%'
+			OR c.c_name LIKE '%' || #{keyword} || '%')
+		</if>
+		ORDER BY e.e_name
+	</select>
+	
+	<select id="selectEmp" resultType="emp">
+		SELECT e.*, c.c_name FROM emp e, company c WHERE e.c_no = c.c_no AND e.emp_no = #{emp_no}
+		ORDER BY e.e_name
+	</select>
+	
+	<insert id="sendNote">
+		INSERT INTO note VALUES (n_no_seq.nextval, #{caller}, '', #{con}, sysdate, #{title}, #{files}, #{receiver}, '', #{c_company}, #{r_company}, 'N', #{realFileName})
+	</insert>
+	
+	<select id="getNoteList" resultType="note">
+		SELECT n.* , a.e_name callerName, b.e_name RECEIVERname, c.c_name c_cname, d.c_name r_cname
+		FROM (SELECT * FROM note n, emp e WHERE n.caller = e.emp_no) a,
+			(SELECT * FROM note n, emp e WHERE n.RECEIVER = e.EMP_NO) b,
+			(SELECT * FROM note n, COMPANY c WHERE n.C_COMPANY = c.C_NO) c,
+			(SELECT * FROM note n, COMPANY c WHERE n.r_COMPANY = c.C_NO) d,
+			note n
+			WHERE n.n_no = a.n_no
+			AND n.n_no = b.n_no
+			AND n.n_no = c.n_no
+			AND n.n_no = d.n_no
+			AND n.R_company = #{c_no}
+			<if test="searchType == 't'.toString()">
+				AND n.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND a.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'c'.toString()">
+				AND c.c_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'tcw'.toString()">
+				AND ( 
+				n.title LIKE '%' || #{keyword} || '%'
+				OR
+				a.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				c.c_name LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+			<if test="searchType == 'tcr'.toString()">
+				AND ( 
+					n.title LIKE '%' || #{keyword} || '%'
+					OR
+					b.e_name LIKE '%' || #{keyword} || '%'
+					OR
+					c.c_name LIKE '%' || #{keyword} || '%'
+					)
+			</if>
+			<if test="searchType == 'r'.toString()">
+			 	AND b.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			ORDER BY n.n_no DESC
+	</select>
+	
+	<select id="selectNote" resultType="note">
+		SELECT n.* , a.e_name callerName, b.e_name RECEIVERname, c.c_name c_cname, d.c_name r_cname
+FROM (SELECT * FROM note n, emp e WHERE n.caller = e.emp_no) a,
+	(SELECT * FROM note n, emp e WHERE n.RECEIVER = e.EMP_NO) b,
+	(SELECT * FROM note n, COMPANY c WHERE n.C_COMPANY = c.C_NO) c,
+	(SELECT * FROM note n, COMPANY c WHERE n.r_COMPANY = c.C_NO) d,
+	note n
+	WHERE n.n_no = a.n_no
+	AND n.n_no = b.n_no
+	AND n.n_no = c.n_no
+	AND n.n_no = d.n_no
+		AND n.n_no = #{n_no}
+		ORDER BY n.n_no DESC
+	</select>
+	
+	<update id="readableUpdate">
+		UPDATE note SET "readable" = 'Y' WHERE n_no = #{n_no}
+	</update>
+	
+	<delete id="deleteNote">
+		DELETE note WHERE n_no = #{n_no}
+	</delete>
+	
+	<select id="searchNote" resultType="note">
+				SELECT n.* , a.e_name callerName, b.e_name RECEIVERname, c.c_name c_cname, d.c_name r_cname
+FROM (SELECT * FROM note n, emp e WHERE n.caller = e.emp_no) a,
+	(SELECT * FROM note n, emp e WHERE n.RECEIVER = e.EMP_NO) b,
+	(SELECT * FROM note n, COMPANY c WHERE n.C_COMPANY = c.C_NO) c,
+	(SELECT * FROM note n, COMPANY c WHERE n.r_COMPANY = c.C_NO) d,
+	note n
+	WHERE n.n_no = a.n_no
+	AND n.n_no = b.n_no
+	AND n.n_no = c.n_no
+	AND n.n_no = d.n_no
+	AND n.R_company = #{c_no}
+			<if test="searchType == 't'.toString()">
+				AND n.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND a.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'c'.toString()">
+				AND c.c_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'tcw'.toString()">
+				AND ( 
+				n.title LIKE '%' || #{keyword} || '%'
+				OR
+				a.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				c.c_name LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+			<if test="searchType == 'tcr'.toString()">
+				AND ( 
+					n.title LIKE '%' || #{keyword} || '%'
+					OR
+					b.e_name LIKE '%' || #{keyword} || '%'
+					OR
+					c.c_name LIKE '%' || #{keyword} || '%'
+					)
+			</if>
+			<if test="searchType == 'r'.toString()">
+			 	AND b.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			ORDER BY n.n_no DESC
+	</select>
+	
+	<select id="getSendNoteList" resultType="note">
+	SELECT n.* , a.e_name callerName, b.e_name RECEIVERname, c.c_name c_cname, d.c_name r_cname
+	FROM (SELECT * FROM note n, emp e WHERE n.caller = e.emp_no) a,
+	(SELECT * FROM note n, emp e WHERE n.RECEIVER = e.EMP_NO) b,
+	(SELECT * FROM note n, COMPANY c WHERE n.C_COMPANY = c.C_NO) c,
+	(SELECT * FROM note n, COMPANY c WHERE n.r_COMPANY = c.C_NO) d,
+	note n
+	WHERE n.n_no = a.n_no
+	AND n.n_no = b.n_no
+	AND n.n_no = c.n_no
+	AND n.n_no = d.n_no
+	AND n.c_company = #{c_no}
+		ORDER BY n.n_no DESC
+	</select>
+	
+	<select id="selectSendSearchNoteListCount" resultType="int">
+			SELECT COUNT(*)
+FROM (SELECT * FROM note n, emp e WHERE n.caller = e.emp_no) a,
+	(SELECT * FROM note n, emp e WHERE n.RECEIVER = e.EMP_NO) b,
+	(SELECT * FROM note n, COMPANY c WHERE n.C_COMPANY = c.C_NO) c,
+	(SELECT * FROM note n, COMPANY c WHERE n.r_COMPANY = c.C_NO) d,
+	note n
+	WHERE n.n_no = a.n_no
+	AND n.n_no = b.n_no
+	AND n.n_no = c.n_no
+	AND n.n_no = d.n_no
+	AND n.c_company = #{c_no}
+			<if test="searchType == 't'.toString()">
+				AND n.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND a.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'c'.toString()">
+				AND c.c_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'tcw'.toString()">
+				AND ( 
+				n.title LIKE '%' || #{keyword} || '%'
+				OR
+				a.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				c.c_name LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+			<if test="searchType == 'tcr'.toString()">
+				AND ( 
+					n.title LIKE '%' || #{keyword} || '%'
+					OR
+					b.e_name LIKE '%' || #{keyword} || '%'
+					OR
+					c.c_name LIKE '%' || #{keyword} || '%'
+					)
+			</if>
+			<if test="searchType == 'r'.toString()">
+			 	AND b.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			ORDER BY n.n_no DESC
+	</select>
+	
+	<select id="selectSearchNoteListCount" resultType="int">
+			SELECT COUNT(*)
+FROM (SELECT * FROM note n, emp e WHERE n.caller = e.emp_no) a,
+	(SELECT * FROM note n, emp e WHERE n.RECEIVER = e.EMP_NO) b,
+	(SELECT * FROM note n, COMPANY c WHERE n.C_COMPANY = c.C_NO) c,
+	(SELECT * FROM note n, COMPANY c WHERE n.r_COMPANY = c.C_NO) d,
+	note n
+	WHERE n.n_no = a.n_no
+	AND n.n_no = b.n_no
+	AND n.n_no = c.n_no
+	AND n.n_no = d.n_no
+	AND n.R_company = #{c_no}
+			<if test="searchType == 't'.toString()">
+				AND n.title LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'w'.toString()">
+				AND a.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'c'.toString()">
+				AND c.c_name LIKE '%' || #{keyword} || '%'
+			</if>
+			<if test="searchType == 'tcw'.toString()">
+				AND ( 
+				n.title LIKE '%' || #{keyword} || '%'
+				OR
+				a.e_name LIKE '%' || #{keyword} || '%'
+				OR
+				c.c_name LIKE '%' || #{keyword} || '%'
+				)
+			</if>
+			<if test="searchType == 'tcr'.toString()">
+				AND ( 
+					n.title LIKE '%' || #{keyword} || '%'
+					OR
+					b.e_name LIKE '%' || #{keyword} || '%'
+					OR
+					c.c_name LIKE '%' || #{keyword} || '%'
+					)
+			</if>
+			<if test="searchType == 'r'.toString()">
+			 	AND b.e_name LIKE '%' || #{keyword} || '%'
+			</if>
+			ORDER BY n.n_no DESC
+	</select>
+	
+	<select id="selectMyMenuList" resultType="Map">
+		SELECT (
+				SELECT min(murl) 
+  				FROM MENU
+ 				WHERE MURL = mm.murl
+				) murl
+	   		  ,(
+		 		SELECT min(mname) 
+  		 		FROM MENU
+ 		 		WHERE MURL = mm.murl
+		 		) mname
+	   		  ,(
+		 		SELECT max(mcode) 
+  		 		FROM MENU
+ 		 		WHERE MURL = mm.murl
+		 		) mcode
+  		FROM mymenu mm
+	   WHERE u_no = #{u_no }
+	</select>
+	
+	<insert id="registMyMenu">
+		INSERT INTO mymenu 
+		VALUES (#{u_no}
+			   ,#{murl}
+				)
+	
+	</insert>
+	
+	<delete id="deleteMyMenu">
+		DELETE FROM mymenu
+		 WHERE u_no = #{u_no}
+		   AND murl = #{murl}
+	</delete>
+</mapper>

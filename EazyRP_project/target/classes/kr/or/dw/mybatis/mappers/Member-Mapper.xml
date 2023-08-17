@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper 
+	PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+	"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.MemberDAO">
+	
+	<select id="selectMemberById" parameterType="str" resultType="member">
+	<!-- MemberDAO.selectMemberById -->
+		SELECT *
+		  FROM member
+		 WHERE id = #{id}
+	</select>
+	
+	<insert id="insertMember" parameterType="member">
+		INSERT INTO member(u_no, id, pwd, email, gen, tel, birth, name, addr, enabled, regdate)
+		VALUES(member_seq.nextVal, #{id}, #{pwd}, #{email}, #{gen}, #{tel}, #{birth}, #{name}, #{addr}, 1, SYSDATE)
+	</insert> 
+	
+	<select id="selectErank" parameterType="int" resultType="String">
+		SELECT e_rank
+		  FROM emp
+		 WHERE u_no = #{u_no}
+	</select>
+	
+	<select id="selectPWFind" resultType="String">
+		SELECT u_no
+		  FROM member
+		 WHERE id = #{id}
+		   AND email = #{email}
+	</select>	
+
+	<select id="selectIDFind" resultType="member">
+		SELECT *
+		  FROM member
+		 WHERE name = #{name}
+		   AND email = #{email}
+	</select>	
+	
+	<update id="updatePwd" >
+		UPDATE member 
+		  SET pwd = #{pwd} 
+		 WHERE  id = #{id}
+	</update>
+
+
+	<delete id="deleteUser" parameterType="member">
+		DELETE FROM member
+		WHERE u_no = #{u_no}	
+	</delete>
+
+	<update id="modProfile" >
+		UPDATE member
+		SET
+		   	email 		= #{email}
+		   ,tel 		= #{tel}
+		   ,addr 		= #{addr}
+		WHERE id = #{id}
+	</update>
+
+	<select id="getMail" resultType="int">
+		SELECT COUNT(*)
+		  FROM member
+		 WHERE name= #{name, jdbcType=VARCHAR}
+		  AND email = #{email, jdbcType=VARCHAR}
+	</select>
+	
+	<select id="getMail2" resultType="int">
+		SELECT COUNT(*)
+		  FROM member
+		 WHERE email= #{email, jdbcType=VARCHAR}
+		  AND id = #{id, jdbcType=VARCHAR}
+	</select>
+
+</mapper>

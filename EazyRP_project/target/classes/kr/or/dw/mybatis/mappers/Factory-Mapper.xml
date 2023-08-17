@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.FactoryDAO">
+
+	<sql id="search">
+		<if test="searchType == 'number'.toString()">
+			AND pc_no LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'code'.toString()">
+			AND pc_code LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'title'.toString()">
+			AND pc_name LIKE '%' || #{keyword} || '%'
+		</if>
+		<if test="searchType == 'nnc'.toString()">
+			AND (
+			pc_no LIKE '%' || #{keyword} || '%'
+			OR
+			pc_code LIKE '%' || #{keyword} || '%'
+			OR
+			pc_name LIKE '%' || #{keyword} || '%'
+			)
+		</if>
+	</sql>
+
+	<select id="selectSearchFactoryList" resultType="factory">
+		SELECT	*
+		FROM	factory
+		WHERE	1=1
+		<include refid="search"></include>
+		ORDER BY fac_no desc
+	</select>
+	
+	<select id="selectSearchFactoryListCount" resultType="int">
+		SELECT	COUNT(*)
+		FROM	factory
+		WHERE	1=1
+		<include refid="search"></include>
+	</select>
+	
+</mapper>

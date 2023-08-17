@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="kr.or.dw.dao.WorkOrderDAO">
+
+	<sql id="search">
+		<if test="cri.searchType == 'w'.toString()">
+			AND e.E_NAME LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 't'.toString()">
+			AND w.WO_NAME LIKE '%' || #{cri.keyword} || '%'
+		</if>
+		<if test="cri.searchType == 'tw'.toString()">
+			AND (
+			w.WO_NAME LIKE '%' || #{cri.keyword} || '%'
+			OR
+			e.E_NAME LIKE '%' || #{cri.keyword} || '%'
+			)
+		</if>
+	</sql>
+
+	<select id="selectSearchWorkOrderList" resultType="workOrder">
+		SELECT	w.wo_no,
+				MAX(w.sys_regdate) sys_regdate,
+				MAX(w.wo_name) wo_name,
+				MAX(e.e_name) e_name,
+				MAX(w.deliverydate) deliverydate,
+				MAX(w.progress) progress
+		FROM	workorder w, workorderdetail wd, emp e
+		WHERE	1=1
+		AND		w.enabled = 'y'
+		AND		w.emp_no = e.emp_no
+		AND		w.wo_no = wd.wo_no
+		AND		w.c_no = #{c_no}
+		<include refid="search"></include>
+		GROUP BY w.wo_no
+		ORDER BY sys_regdate desc
+	</select>
+	
+	<select id="selectSearchWorkOrderListCount" resultType="int">
+		SELECT	COUNT(DISTINCT w.wo_no)
+		FROM	workorder w, emp e
+		WHERE	1=1
+		AND		w.enabled = 'y'
+		AND		w.emp_no = e.emp_no
+		AND		w.c_no = #{c_no}
+		<include refid="search"></include>
+	</select>
+	
+	<select id="selectEName" resultType="str">
+		SELECT	e.e_name
+		FROM	workorder wo, emp e
+		WHERE	wo.emp_no = e.emp_no
+	</select>
+	
+	<!-- 이해 안됨 --><!-- 이해 안됨 --><!-- 이해 안됨 --><!-- 이해 안됨 --><!-- 이해 안됨 -->
+	<insert id="insertWorkOrder" parameterType="workOrder">
+		<selectKey keyProperty="wo_no" order="BEFORE" resultType="java.lang.String">
+			<include refid="makeWorkOrderNoSeq"/>
+		</selectKey>
+		INSERT INTO workorder (
+			wo_no,
+			wo_name,
+			sys_regdate,
+			emp_no,
+			c_no,
+			deliverydate,
+			progress,
+			enabled
+		)
+		VALUES(
+			#{wo_no},	<!-- 셀렉트키를 이용함으로써 이게 된다고? -->
+			#{wo_name},
+			sysdate,
+			#{emp_no},
+			#{c_no},
+			#{deliverydate},
+			0,
+			'y'
+		)
+	</insert>
+	
+	<sql id="makeWorkOrderNoSeq">
+		SELECT ('WO_') || CASE 
+							WHEN LENGTH(workorder_seq.nextval) = 1
+							THEN '00' || workorder_seq.nextval
+							WHEN LENGTH(workorder_seq.nextval) = 2
+							THEN '0' || workorder_seq.nextval
+							ELSE '' || workorder_seq.nextval
+				   	      END WO_NO
+		  FROM dual
+	</sql>
+	
+	<insert id="insertWorkOrderDetail" parameterType="workOrder">
+		INSERT INTO workorderdetail (
+			detail_no,
+			quantity,
+			wo_no,
+			fac_no,
+			pr_no
+		)
+		VALUES (
+			workorderdetail_seq.nextval,	<!-- 하드코딩을 시퀀서로 한거라고 생각하면됨 -->
+			#{quantity},
+			#{wo_no},
+			#{fac_no},
+			#{pr_no}
+		)
+	</insert>
+	<!-- 이해 안됨 --><!-- 이해 안됨 --><!-- 이해 안됨 --><!-- 이해 안됨 --><!-- 이해 안됨 -->
+	
+	<select id="selectWorkOrder" parameterType="str" resultType="Map">
+		SELECT 	wo.wo_no, wo.wo_name, e.e_name, wo.emp_no,
+				TO_CHAR(wo.DELIVERYDATE, 'yyyy-MM-dd') DELIVERYDATE, 
+				wo.PROGRESS, c.c_name,
+				TO_CHAR(wo.sys_regdate, 'yyyy-MM-dd') sys_regdate
+		FROM 	workorder wo, emp e, company c
+		WHERE 	wo.emp_no = e.EMP_NO
+		AND 	wo.c_no = c.c_no
+		AND 	wo.wo_no = #{wo_no}
+	</select>
+	
+	<select id="selectWorkOrderDetail" resultType="Map">
+		SELECT 	ROWNUM, 
+				p.pr_name, 
+				wd.WO_NO, 
+				wd.QUANTITY, 
+				wd.DETAIL_NO, 
+				wd.fac_no, 
+				f.fac_name,
+				wd.pr_no
+		FROM WORKORDER wo, WORKORDERDETAIL wd, PRODUCT p, factory f
+		WHERE wo.wo_no = wd.WO_NO
+		AND wd.pr_no = p.pr_no
+		AND wd.fac_no = f.fac_no
+		AND wo.wo_no = #{wo_no}				
+	</select>	
+	
+	<update id="workOrderUpdate">
+		UPDATE	workorder
+		SET		sys_up		= #{emp_no},
+				emp_no		= #{emp_no},
+				wo_name		= #{wo_name},
+				sys_updatedate = sysdate,
+				deliverydate = #{deliverydate},
+				progress 	= #{progress},
+				c_no 		= #{c_no}
+		WHERE	wo_no		= #{wo_no}
+	</update>
+	
+	<update id="modifyWorkOrderDetail">
+		MERGE 
+		INTO 	workorderdetail
+		USING	dual
+		ON		(#{detail_no} != 0)
+		WHEN MATCHED THEN
+		UPDATE 
+		SET			wo_no	= #{wo_no},
+					pr_no	= #{pr_no},
+					fac_no	= #{fac_no},
+					quantity	= #{quantity}
+		WHERE		detail_no	= #{detail_no}
+		WHEN NOT MATCHED THEN
+		INSERT (
+			detail_no,
+			wo_no,
+			pr_no,
+			fac_no,
+			quantity
+		)
+		VALUES(
+			detail_no_seq.nextval,
+			#{wo_no},
+			#{pr_no},
+			#{fac_no},
+			#{quantity}
+		)
+	</update>
+	
+	<!-- detail.jsp 에서 제품 tr 삭제했을때 지워지는 쿼리이다. -->
+	<delete id="deleteWorkOrderDetail">
+		DELETE	from workorderdetail
+		WHERE	detail_no = #{detail_no}
+	</delete>
+	
+	<!-- 바로 위와 아래는 확실히 구분되어야 함 그 이유는 각각 위 아래에 주석을 확인하면 된다. -->
+	<update id="deleteWorkOrder"> <!-- 실제 삭제하는것이 아닌 enabled를 n으로 하여 조회할때 나오지 않도록 조건을 걸어준다. -->
+		UPDATE	workorder
+		SET		enabled = 'n'
+		WHERE	wo_no = #{wo_no}
+	</update>
+	
+	<!-- 위 deleteWorkOrder 와 함께 작업지시서 하나를 통째로 삭제할때 함께 삭제되는 그에 속한 디테일이다. -->
+	<delete id="deleteWorkOrderDetailList">
+		DELETE	from workorderdetail
+		WHERE	wo_no = #{wo_no}
+	</delete>
+
+	<update id="updateBtn">
+		UPDATE wh SET progress = #{progress} WHERE wh_no = #{wh_no}
+	</update>
+	
+	<select id="getPrice" resultType="int">
+		SELECT pr_inprice FROM product WHERE pr_no = #{pr_no}
+	</select>
+	
+	<insert id="insertError">
+		INSERT INTO error VALUES(
+			'ER_' || LPAD(ER_NO_SEQ.nextval, 4, '0'),
+			sysdate,
+			'2',
+			#{quantity},
+			#{wo_no},
+			#{amount},
+			#{c_no},
+			#{pr_no},
+			#{fac_no}
+		)
+	</insert>
+	
+	<insert id="insertTr">
+		INSERT INTO tr_history VALUES(
+			'TH_' || LPAD(th_no_seq.nextval, 4, '0'),
+			sysdate,
+			sysdate,
+			#{c_no},
+			2,
+			'FC_003',
+			#{total},
+			#{wh_no},
+			'e',
+			'Y',
+			'/erp4/wh/detail.do?wh_no=' || #{wh_no},
+			#{quantity},
+			'',
+			'AC_001',
+			'T_001',
+			'',
+			'',
+			2,
+			'',
+			#{total}
+		)
+	</insert>
+	
+	<select id="getProduct" resultType="int">
+		SELECT COUNT(*) FROM product WHERE pr_name = #{pr_name} AND wh_no = #{wh_no2}
+	</select>
+	
+	<insert id="insertProduct">
+		INSERT INTO product VALUES(
+			'PR_' || LPAD(product_seq.nextval, 3, '0'),
+			#{pr_name},
+			#{c_no},
+			(SELECT MAX(pr_gr) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+			(SELECT MAX(pr_st) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+			(SELECT MAX(pr_inprice) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+			(SELECT MAX(pr_exprice) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+			(SELECT MAX(pr_class) FROM product WHERE pr_name = #{pr_name} GROUP BY pr_name),
+			'',
+			sysdate,
+			'SP_001',
+			0,
+			sysdate,
+			sysdate,
+			0,
+			#{quantity},
+			#{wh_no2},
+			'Y'
+		)
+	</insert>
+	
+	<update id="updateProduct">
+		UPDATE product SET quantity = quantity + #{quantity} WHERE pr_name = #{pr_name} AND wh_no = #{wh_no2}
+	</update>
+	
+	<select id="getErrorList" resultType="error">
+		SELECT e.*, p.pr_name, p.pr_inprice, f.fac_name
+		FROM error e, product p, factory f
+		WHERE e.c_no = #{c_no}
+		  AND e.pr_no = p.pr_no
+		  AND e.fac_no = f.fac_no
+		<if test="cri2.startDate != ''.toString() and cri2.endDate != ''.toString()">
+			AND e.sys_regdate BETWEEN TO_DATE(#{cri2.startDate}, 'YYYY-MM-DD') AND TO_DATE(#{cri2.endDate}, 'YYYY-MM-DD') + INTERVAL '1' DAY - INTERVAL '1' SECOND
+		</if>
+		<if test="cri2.startDate != ''.toString() and cri2.endDate == ''.toString()">
+			AND e.sys_regdate <![CDATA[>]]> #{cri2.startDate}
+		</if>
+		<if test="cri2.startDate == ''.toString() and cri2.endDate != ''.toString()">
+			AND e.sys_regdate <![CDATA[<]]> #{cri2.endDate}
+		</if>
+	</select>
+	
+	<update id="updateWorkOrderProgress">
+		UPDATE	workorder
+		SET		progress = #{progress}
+		WHERE	wo_no = #{wo_no}
+	</update>
+	
+</mapper>
